@@ -1,0 +1,16 @@
+[project]
+name = "pathways-typing"
+version = "0.1.0"
+description = "Python modules for the Pathways typing tool"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["polars>=1.9.0"]
+
+[tool.uv]
+dev-dependencies = ["pre-commit>=3.8.0", "ruff>=0.6.8"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.pycodestyle]
+max-doc-length = 100
