@@ -127,13 +127,18 @@ def form_diagram(root: SurveyNode) -> str:
         name = n.uid
 
         if n.is_leaf:
+            shape_type = "hexagon"
+        elif n.type == "calculate":
+            shape_type = "parallelogram"
+        else:
+            shape_type = "rectangle"
+
+        if n.is_leaf:
             label = n.calculation
-            shape_type = "circle"
             diagram += "\t" + _shape(name, "Segment", label, shape_type) + "\n"
 
         else:
             label = n.label["label::English (en)"]
-            shape_type = "rectangle"
             diagram += "\t" + _shape(name, name, label, shape_type) + "\n"
 
     for n in root.preorder():
