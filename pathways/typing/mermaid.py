@@ -8,7 +8,7 @@ Notes:
       feature.
 """
 
-from pathways.typing.tree import Node
+from pathways.typing.tree import Node, SurveyNode
 
 
 def _left(node: Node) -> Node:
@@ -53,7 +53,7 @@ def _shape(shape_id: str, title: str, description: str, shape_type: str = "recta
 
     shp = SHAPES[shape_type]
 
-    return f"{shape_id}{shp[0]}{title}\\n{description}{shp[1]}"
+    return f'{shape_id}{shp[0]}"{title}<br>{description}"{shp[1]}'
 
 
 def _link(id_a: str, id_b: str, label: str = None) -> str:
@@ -101,5 +101,40 @@ def cart_diagram(root: Node) -> str:
         if _right(n):
             child = "n" + str(_right(n).data["cart_index"])
             diagram += "\t" + _link(parent, child, "no") + "\n"
+
+    return diagram
+
+
+def form_diagram(root: SurveyNode) -> str:
+    """Generate a diagram of the form tree with the Mermaid language.
+
+    Args:
+        root (Node): root node of the form tree
+
+    Returns:
+        str: Mermaid diagram of the form tree
+    """
+    diagram = "flowchart TD\n"
+
+    for n in root.preorder():
+        name = n.uid
+
+        if n.is_leaf:
+            label = n.calculation
+            shape_type = "circle"
+            diagram += "\t" + _shape(name, "Segment", label, shape_type) + "\n"
+
+        else:
+            label = n.label["label::English (en)"]
+            shape_type = "rectangle"
+            diagram += "\t" + _shape(name, name, label, shape_type) + "\n"
+
+    for n in root.preorder():
+        for child in n.children:
+            if child.data.get("parent_choices"):
+                label = ", ".join(child.data["parent_choices"])
+            else:
+                label = None
+            diagram += "\t" + _link(id_a=n.uid, id_b=child.uid, label=label) + "\n"
 
     return diagram
