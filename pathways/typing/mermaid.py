@@ -39,7 +39,7 @@ def _shape(shape_id: str, title: str, description: str, shape_type: str = "recta
         title (str): shape title (displayed at the top of the shape)
         description (str): shape description (displayed at the bottom of the shape)
         shape_type (str): shape type (default: "rectangle"). Available shape types are:
-            "rectangle", "round_edges", "stadium", and "circle".
+            "rectangle", "round_edges", "stadium", "hexagon", "parallelogram", and "circle".
 
     Returns:
         str: mermaid shape
@@ -49,6 +49,8 @@ def _shape(shape_id: str, title: str, description: str, shape_type: str = "recta
         "round_edges": ("(", ")"),
         "stadium": ("([", "])"),
         "circle": ("((", "))"),
+        "hexagon": ("{{", "}}"),
+        "parallelogram": ("[/", "/]"),
     }
 
     shp = SHAPES[shape_type]
