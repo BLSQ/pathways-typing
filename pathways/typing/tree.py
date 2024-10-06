@@ -177,17 +177,15 @@ class SurveyNode(Node):
 
     def from_config(self, questions_config: dict, choices_config: dict):
         """Set survey node attributes from config data."""
-        var = self.data.get("cart_var")
+        var = self.name
 
         # node is a leaf, so no question will be asked instead, register cluster in a question of
         # type "calculate" with a default value equal to the cluster
         # this is to ensure that the cluster value is stored with the submission
         # nb: no value will be stored if the user does not reach that node
-        if var == "<leaf>":
+        if var == "segment":
             self.type = "calculate"
             self.calculation = str(self.data.get("cart_cluster"))
-            self.name = "segment"
-            self.uid = self.generate_uid()
 
         # node is not a leaf: fetch associated question data from config
         else:
@@ -241,12 +239,31 @@ class SurveyNode(Node):
                 var=self.parent.uid, operator=contains, values=choices
             )
 
+            # store list of valid parent choices in the node data
+            self.data["parent_choices"] = [
+                choice["label"]["label::English (en)"]
+                for choice in self.parent.choices
+                if choice["name"] in choices
+            ]
+
         # if the parent node is a "calculate", "integer" or "decimal" question, we need to test
         # against a single value
         elif self.parent.type in ["calculate", "integer", "decimal"]:
             expression = create_xpath_condition(
                 var=self.parent.uid, operator=rule.operator, values=rule.values
             )
+
+            MAPPING = {
+                gt: ">",
+                ge: ">=",
+                lt: "<",
+                le: "<=",
+                eq: "=",
+                contains: "=",
+            }
+
+            # store str condition in the node data
+            self.data["parent_choices"] = [f"{MAPPING[rule.operator]} {rule.values}"]
 
         else:
             raise FormError(f"Parent node type `{self.parent.type}` not supported")
