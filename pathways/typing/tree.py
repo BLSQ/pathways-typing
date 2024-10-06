@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 import random
 import re
+import subprocess
+import tempfile
 from operator import contains, eq, ge, gt, le, lt
 from pathlib import Path
 from typing import Callable, Iterator
@@ -458,3 +460,20 @@ def build_xlsform(survey: list[dict], choices: list[dict], dst_file: Path):
         choices.write_excel(
             workbook=wb, worksheet="choices", header_format={"bold": True}, autofit=True
         )
+
+
+def validate_xlsform(src_file: Path):
+    """Validate xlsform with pyxform.
+
+    Includes internal pyxform checks and ODK Validate.
+
+    Raises:
+        FormError: if validation fails
+    """
+    with tempfile.NamedTemporaryFile() as tmp:
+        p = subprocess.run(
+            ["xls2xform", src_file.absolute().as_posix(), tmp.name], capture_output=True
+        )
+
+        if p.returncode != 0:
+            raise FormError(f"XLSForm validation failed: {p.stderr.decode()}")
