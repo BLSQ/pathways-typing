@@ -59,7 +59,7 @@ def _shape(shape_id: str, title: str, description: str, shape_type: str = "recta
 def _link(id_a: str, id_b: str, label: str = None) -> str:
     """Draw mermaid link between two shapes."""
     if label:
-        return f"{id_a} -->|{label}| {id_b}"
+        return f'{id_a} -->|"{label}"| {id_b}'
     return f"{id_a} --> {id_b}"
 
 
@@ -132,7 +132,7 @@ def form_diagram(root: SurveyNode) -> str:
     for n in root.preorder():
         for child in n.children:
             if child.data.get("parent_choices"):
-                label = ", ".join(child.data["parent_choices"])
+                label = ", ".join([f"'{c}'" for c in child.data["parent_choices"]])
             else:
                 label = None
             diagram += "\t" + _link(id_a=n.uid, id_b=child.uid, label=label) + "\n"
