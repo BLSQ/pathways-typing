@@ -1,6 +1,7 @@
 """Read configuration from a google spreadsheet."""
 
 import gspread
+import yaml
 from oauth2client.service_account import ServiceAccountCredentials
 
 
@@ -101,5 +102,13 @@ def get_options(data: list[dict]) -> list[dict]:
         dict: form generation options as a list of dict
     """
     options = {}
+
+    for row in data["options"]:
+        options.append(
+            {
+                "option": row["option"],
+                "config": yaml.safe_load(row["config"]),
+            }
+        )
 
     return options
