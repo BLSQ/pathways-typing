@@ -101,7 +101,7 @@ def get_options(data: list[dict]) -> list[dict]:
     Returns:
         dict: form generation options as a list of dict
     """
-    options = {}
+    options = []
 
     for row in data["options"]:
         options.append(
