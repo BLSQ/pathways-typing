@@ -53,13 +53,18 @@ def _shape(shape_id: str, title: str, description: str, shape_type: str = "recta
 
     shp = SHAPES[shape_type]
 
-    return f'{shape_id}{shp[0]}"{title}<br>{description}"{shp[1]}'
+    for char in ["[", "]", "(", ")", "_", "\n"]:
+        description = description.replace(char, " ")
+
+    return f"{shape_id}{shp[0]}{title}\\n{description}{shp[1]}"
 
 
 def _link(id_a: str, id_b: str, label: str = None) -> str:
     """Draw mermaid link between two shapes."""
     if label:
-        return f'{id_a} -->|"{label}"| {id_b}'
+        for char in ["/", "_"]:
+            label = label.replace(char, " ")
+        return f"{id_a} -->|{label}| {id_b}"
     return f"{id_a} --> {id_b}"
 
 
