@@ -105,14 +105,37 @@ def cart_diagram(root: Node) -> str:
 
     # draw links between shapes
     for n in root.preorder():
-        parent = "n" + str(n.data["cart_index"])
+        prefix = "n"
+        strata = n.data.get("cart_strata")
+        if strata:
+            strata = strata[0]
+        else:
+            strata = ""
+        cart_index = n.data.get("cart_index", 0)
+        parent = prefix + str(strata) + str(cart_index)
 
         if _left(n):
-            child = "n" + str(_left(n).data["cart_index"])
+            prefix = "n"
+            strata = _left(n).data.get("cart_strata")
+            if strata:
+                strata = strata[0]
+            else:
+                strata = ""
+            cart_index = _left(n).data.get("cart_index", 0)
+            child = prefix + str(strata) + str(cart_index)
+
             diagram += "\t" + _link(parent, child, "yes") + "\n"
 
         if _right(n):
-            child = "n" + str(_right(n).data["cart_index"])
+            prefix = "n"
+            strata = _right(n).data.get("cart_strata")
+            if strata:
+                strata = strata[0]
+            else:
+                strata = ""
+            cart_index = _right(n).data.get("cart_index", 0)
+            child = prefix + str(strata) + str(cart_index)
+
             diagram += "\t" + _link(parent, child, "no") + "\n"
 
     return diagram
