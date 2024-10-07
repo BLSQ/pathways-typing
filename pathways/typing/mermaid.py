@@ -93,7 +93,7 @@ def cart_diagram(root: Node) -> str:
         name = prefix + str(strata) + str(cart_index)
 
         # label is cluster number for leaf nodes
-        if n.data["is_leaf"]:
+        if n.data.get("is_leaf"):
             label = f"Cluster {n.data['cart_cluster']}"
             shape_type = "circle"
         # label is split rule for non-leaf nodes
