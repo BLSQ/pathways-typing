@@ -487,10 +487,8 @@ def validate_xlsform(src_file: Path):
     Raises:
         FormError: if validation fails
     """
-    with tempfile.NamedTemporaryFile() as tmp:
-        p = subprocess.run(
-            ["xls2xform", src_file.absolute().as_posix(), tmp.name], capture_output=True
-        )
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        p = subprocess.run(["xls2xform", src_file, Path(tmp_dir, "form.xml")], capture_output=True)
 
         if p.returncode != 0:
             raise FormError(f"XLSForm validation failed: {p.stderr.decode()}")
