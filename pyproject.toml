@@ -15,7 +15,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pathways"]
+include = ["pathways.typing"]
 namespaces = true
 
 [tool.uv]
