@@ -294,6 +294,10 @@ def merge_trees(root_urban: Node, root_rural: Node) -> Node:
     # set the parent of the two trees to the new root node
     root_urban.parent = root
     root_rural.parent = root
+    root_urban.data["is_left_child"] = True
+    root_urban.data["is_right_child"] = False
+    root_rural.data["is_right_child"] = True
+    root_rural.data["is_left_child"] = False
 
     # manually add a new cart rule to add a split based on location
     root.data = {"cart_var": "location", "cart_index": "0"}
