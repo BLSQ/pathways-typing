@@ -93,7 +93,7 @@ def calculate(
         if node.name == dst_question:
             # new question
             new = SurveyNode(name=src_question, parent=node.parent)
-            new.children = node.children
+            new.children = [node]
             new.relevant = node.relevant
 
             # update children of parent nodes:
@@ -111,6 +111,7 @@ def calculate(
             new.from_config(questions_config, choices_config)
 
             # modify dst_question to store calculation result
+            node.parent = new
             node.type = "calculate"
             node.calculation = calculation.format(**{new.name: new.uid})
 
