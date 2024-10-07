@@ -32,11 +32,11 @@ def read_spreadsheet(url: str, credentials: dict) -> dict:
     return data
 
 
-def get_questions(data: list[dict]) -> dict:
+def get_questions(data: dict) -> dict:
     """Get questions from the configuration spreadsheet.
 
     Args:
-        data (list[dict]): configuration data from the spreadsheet
+        data (dict): configuration data from the spreadsheet
 
     Returns:
         dict: questions with question id as keys and question data as values
@@ -56,11 +56,11 @@ def get_questions(data: list[dict]) -> dict:
     return questions
 
 
-def get_choices(data: list[dict]) -> dict:
+def get_choices(data: dict) -> dict:
     """Get choices from the configuration spreadsheet.
 
     Args:
-        data (list[dict]): configuration data from the spreadsheet
+        data (dict): configuration data from the spreadsheet
 
     Returns:
         dict: choices with choice list id as keys and choices as values
@@ -93,11 +93,11 @@ def get_choices(data: list[dict]) -> dict:
     return choices
 
 
-def get_options(data: list[dict]) -> list[dict]:
+def get_options(data: dict) -> list[dict]:
     """Get options from the configuration spreadsheet.
 
     Args:
-        data (list[dict]): configuration data from the spreadsheet
+        data (dict): configuration data from the spreadsheet
     Returns:
         dict: form generation options as a list of dict
     """
