@@ -296,7 +296,7 @@ def merge_trees(root_urban: Node, root_rural: Node) -> Node:
     root_rural.parent = root
 
     # manually add a new cart rule to add a split based on location
-    root.data = {"cart_var": "location"}
+    root.data = {"cart_var": "location", "cart_index": "0"}
     root_urban.data["cart_rule"] = CARTRule("location=urban")
     root_rural.data["cart_rule"] = CARTRule("location=rural")
 
@@ -337,7 +337,7 @@ def create_xpath_condition(
     return expression
 
 
-def build_binary_tree(frame: list[dict]) -> Node:
+def build_binary_tree(frame: list[dict], strata: str = None) -> Node:
     """Build binary tree from CART output.
 
     The function transforms a list of CART splits into Node objects, and assign parents and
@@ -368,6 +368,7 @@ def build_binary_tree(frame: list[dict]) -> Node:
             "cart_var": n["var"].lower().replace(".", "_"),
             "cart_rule": rule,
             "cart_cluster": n["yval"],
+            "cart_strata": strata,
         }
 
         # is this the root node?
