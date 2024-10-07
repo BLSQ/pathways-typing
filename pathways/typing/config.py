@@ -4,6 +4,8 @@ import gspread
 import yaml
 from oauth2client.service_account import ServiceAccountCredentials
 
+from pathways.typing.exceptions import ConfigError
+
 
 def read_spreadsheet(url: str, credentials: dict) -> dict:
     """Read configuration spreadsheet from Google Sheets.
@@ -112,3 +114,35 @@ def get_options(data: dict) -> list[dict]:
         )
 
     return options
+
+
+def validate_config(config_data: dict, cart_urban: list[dict], cart_rural: list[dict]):
+    """Validate config data from spreadsheet."""
+    # are all CART variables included in the config?
+    for node in cart_urban + cart_rural:
+        var = node["var"].replace(".", "_").lower()
+        if var != "<leaf>":
+            if var not in config_data["questions"]:
+                raise ConfigError("Missing question data for CART variable `{}`".format(var))
+
+    # are all additional questions from options included in the config?
+    for option in config_data["options"]:
+        for entry, value in option["config"].items():
+            if entry.startswith("dst_question") or entry.startswith("src_question"):
+                if value not in config_data["questions"]:
+                    raise ConfigError(
+                        "Missing question data for additional question `{}`".format(value)
+                    )
+
+    for name, question in config_data["questions"].items():
+        # check question types
+        if question.get("type") not in [
+            "calculate",
+            "select_one",
+            "select_multiple",
+            "integer",
+            "decimal",
+        ]:
+            raise ConfigError(
+                "Unspported question type `{}` for question `{}`".format(question.get("type"), name)
+            )
