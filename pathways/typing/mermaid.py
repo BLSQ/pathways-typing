@@ -83,8 +83,14 @@ def cart_diagram(root: Node) -> str:
 
     # draw one shape per node
     for n in root.preorder():
-        # use node binary index as shape id
-        name = "n" + str(n.data.get("cart_strata")[0]) + str(n.data.get("cart_index"), 0)
+        prefix = "n"
+        strata = n.data.get("cart_strata")
+        if strata:
+            strata = strata[0]
+        else:
+            strata = ""
+        cart_index = n.data.get("cart_index", 0)
+        name = prefix + str(strata) + str(cart_index)
 
         # label is cluster number for leaf nodes
         if n.data["is_leaf"]:
