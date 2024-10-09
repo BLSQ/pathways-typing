@@ -116,6 +116,36 @@ def get_options(data: dict) -> list[dict]:
     return options
 
 
+def get_settings(data: dict) -> dict:
+    """Get form-level settings from the configuration spreadsheet.
+
+    Args:
+        data (dict): configuration data from the spreadsheet
+    Returns:
+        dict: form-level settings
+    """
+    settings = {}
+
+    if "settings" not in data:
+        return None
+
+    for row in data["settings"]:
+        settings[row["key"]] = row["value"]
+
+    return settings
+
+
+def get_screening(data: dict) -> list[dict]:
+    """Get screening questions from the configuration spreadsheet.
+
+    Args:
+        data (dict): configuration data from the spreadsheet
+    Returns:
+        list[dict]: screening config with one dict per screening question
+    """
+    return data.get("screening")
+
+
 def validate_config(config_data: dict, cart_urban: list[dict], cart_rural: list[dict]):
     """Validate config data from spreadsheet."""
     # are all CART variables included in the config?
