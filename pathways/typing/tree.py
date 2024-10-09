@@ -412,9 +412,23 @@ def build_binary_tree(frame: list[dict], strata: str = None) -> Node:
     return nodes[1]
 
 
-def survey_worksheet(root: Node) -> list[dict]:
+def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
     """Generate survey worksheet from a tree (one row per question)."""
     survey = []
+
+    begin_group = {
+        "type": "begin_group",
+        "name": "typing",
+        "relevant": settings_config.get("typing_group_relevant"),
+    }
+
+    # typing group labels from form settings
+    for key, value in settings_config:
+        if key.startswith("typing_group_label"):
+            column = key.replace("typing_group_", "")
+            begin_group[column] = value
+
+    survey.append(begin_group)
 
     for node in root.preorder():
         row = {}
@@ -463,6 +477,9 @@ def survey_worksheet(root: Node) -> list[dict]:
                 row[f"label::{language}"] = MSG[language].format(node.data["cart_cluster"])
 
             survey.append(row)
+
+    end_group = {"type": "end_group", "name": "typing"}
+    survey.append(end_group)
 
     return survey
 
