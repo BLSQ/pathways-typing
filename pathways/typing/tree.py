@@ -290,6 +290,17 @@ class SurveyNode(Node):
         else:
             raise FormError(f"Parent node type `{self.parent.type}` not supported")
 
+        # if there is an identical question higher in the tree, use it instead
+        parent_uid = self.parent.uid
+        for parent in self.parents():
+            if parent.name == self.parent.name:
+                parent_uid = parent.uid
+        expression = expression.replace(self.parent.uid, parent_uid)
+
+        # add relevant conditions of parent nodes
+        parent_expressions = [parent.relevant for parent in self.parents() if parent.relevant]
+        expression = " and ".join([f"({expr})" for expr in parent_expressions + [expression]])
+
         return expression
 
 
@@ -445,7 +456,7 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
     }
 
     # typing group labels from form settings
-    for key, value in settings_config:
+    for key, value in settings_config.items():
         if key.startswith("typing_group_label"):
             column = key.replace("typing_group_", "")
             begin_group[column] = value
@@ -456,6 +467,14 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
         row = {}
         row["type"] = node.type
         row["name"] = node.uid
+
+        # if question has already been asked higher in the tree, don't ask it again
+        already_asked = False
+        for parent in node.parents():
+            if parent.name == node.name:
+                already_asked = True
+        if already_asked:
+            continue
 
         # labels and hints can have multiple columns (one column per language)
         if node.label is not None:
