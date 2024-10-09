@@ -54,22 +54,22 @@ class CARTRule:
 
         # possible operators are: =, >, >=, <, and <=
         # also remove the operator substring from the string
-        rule = rule.replace(var, "")
+        rule = rule.replace(var, "", 1)
         if rule.startswith("="):
             ope = contains
-            rule = rule.replace("=", "")
+            rule = rule.replace("=", "", 1)
         elif rule.startswith(">="):
             ope = ge
-            rule = rule.replace(">=", "")
+            rule = rule.replace(">=", "", 1)
         elif rule.startswith(">"):
             ope = gt
-            rule = rule.replace(">", "")
+            rule = rule.replace(">", "", 1)
         elif rule.startswith("<="):
             ope = le
-            rule = rule.replace("<=", "")
+            rule = rule.replace("<=", "", 1)
         elif rule.startswith("<"):
             ope = lt
-            rule = rule.replace("<", "")
+            rule = rule.replace("<", "", 1)
         else:
             raise CARTError(f"Unable to extract operator from CART rule `{self.rule}`")
 
