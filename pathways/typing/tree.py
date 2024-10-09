@@ -444,19 +444,23 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
                 row[col] = hint
 
         row["choice_list"] = node.choice_list
-        row["required"] = node.required
         row["calculation"] = node.calculation
         row["relevant"] = node.relevant
 
-        # by default, all questions are marked as required
-        if node.type not in ["note"]:
+        # by default, all questions are required except questions of type "select_multiple"
+        if node.type in ["select_one", "integer", "decimal", "text"]:
             row["required"] = "TRUE"
-            MSG = {
-                "English (en)": "Sorry, this question is required!",
-                "French (fr)": "Désolé, cette question est obligatoire!",
-            }
-            for language in ["English (en)", "French (fr)"]:
-                row[f"required_message::{language}"] = MSG[language]
+        elif node.type in ["select_multiple"]:
+            row["required"] = "FALSE"
+        else:
+            row["required"] = None
+
+        # add required_message columns for all languages
+        # required messages are always the same for all questions and are stored in the form settings
+        if row["required"] == "TRUE":
+            for key, value in settings_config.items():
+                if key.startswith("required_message"):
+                    row[key] = value
 
         survey.append(row)
 
