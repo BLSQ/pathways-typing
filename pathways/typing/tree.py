@@ -135,6 +135,13 @@ class Node:
                 yield node
         yield self
 
+    def parents(self) -> Iterator[Node]:
+        """Iterate over all parents of the node."""
+        parent = self.parent
+        while parent:
+            yield parent
+            parent = parent.parent
+
     @property
     def is_leaf(self):
         return len(self.children) == 0
