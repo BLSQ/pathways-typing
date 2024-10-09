@@ -30,7 +30,7 @@ class CARTRule:
         self.var, self.operator, self.values = self.parse()
 
     def __str__(self):
-        return f"CARTRule('{self.rule}')"
+        return self.rule
 
     def __repr__(self):
         return f"CARTRule('{self.rule}')"
@@ -434,16 +434,34 @@ def survey_worksheet(root: Node) -> list[dict]:
         row["calculation"] = node.calculation
         row["relevant"] = node.relevant
 
+        # by default, all questions are marked as required
+        if node.type not in ["note"]:
+            row["required"] = "TRUE"
+            MSG = {
+                "English (en)": "Sorry, this question is required!",
+                "French (fr)": "Désolé, cette question est obligatoire!",
+            }
+            for language in ["English (en)", "French (fr)"]:
+                row[f"required_message::{language}"] = MSG[language]
+
         survey.append(row)
 
         # add a note to notify user that a segment has been assigned
         if node.is_leaf:
+            MSG = {
+                "English (en)": "Respondent belongs to segment {}.",
+                "French (fr)": "Le répondant appartient au segment {}.",
+            }
+
             row = {
                 "type": "note",
                 "name": f"note_{node.uid}",
-                "label::English (en)": f"Segment {node.data['cart_cluster']}",
                 "relevant": node.relevant,
             }
+
+            for language in ["English (en)", "French (fr)"]:
+                row[f"label::{language}"] = MSG[language].format(node.data["cart_cluster"])
+
             survey.append(row)
 
     return survey
