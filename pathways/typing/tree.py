@@ -142,21 +142,6 @@ class Node:
             yield parent
             parent = parent.parent
 
-    def remove(self):
-        """Remove node from tree.
-
-        1) Node is removed from its parent's children list.
-        2) Node parent becomes parent of all node children.
-        3) Node doesn't have any parent or children anymore.
-        """
-        if self.parent is not None:
-            self.parent.children.remove(self)
-            for child in self.children:
-                child.parent = self.parent
-                self.parent.children.append(child)
-        self.parent = None
-        self.children = []
-
     @property
     def is_leaf(self):
         return len(self.children) == 0
