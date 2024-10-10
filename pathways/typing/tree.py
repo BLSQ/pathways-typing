@@ -5,6 +5,7 @@ import random
 import re
 import subprocess
 import tempfile
+from datetime import datetime
 from operator import contains, eq, ge, gt, le, lt
 from pathlib import Path
 from typing import Callable, Iterator
@@ -535,7 +536,21 @@ def choices_worksheet(root: Node) -> list[dict]:
     return choices
 
 
-def build_xlsform(survey: list[dict], choices: list[dict], dst_file: Path):
+def settings_worksheet(settings_config: dict) -> list[dict]:
+    """Generate settings worksheet from form settings."""
+    rows = [
+        {
+            "form_title": settings_config.get("form_title"),
+            "form_id": settings_config.get("form_id"),
+            "version": datetime.now().strftime("%Y%m%d%H%M%S"),
+            "default_language": settings_config.get("default_language", "English (en)"),
+            "allow_choices_duplicates": settings_config.get("allow_choices_duplicates", "yes"),
+        }
+    ]
+    return rows
+
+
+def build_xlsform(survey: list[dict], choices: list[dict], settings: list[dict], dst_file: Path):
     """Generate XLSForm from survey and choices rows."""
     with xlsxwriter.Workbook(dst_file) as wb:
         survey = pl.DataFrame(survey)
@@ -546,6 +561,11 @@ def build_xlsform(survey: list[dict], choices: list[dict], dst_file: Path):
         choices = pl.DataFrame(choices)
         choices.write_excel(
             workbook=wb, worksheet="choices", header_format={"bold": True}, autofit=True
+        )
+
+        settings = pl.DataFrame(settings)
+        settings.write_excel(
+            workbook=wb, worksheet="settings", header_format={"bold": True}, autofit=True
         )
 
 
