@@ -29,7 +29,15 @@ def read_spreadsheet(url: str, credentials: dict) -> dict:
 
     data = {}
     for worksheet in spreadsheet.worksheets():
-        data[worksheet.title] = worksheet.get_all_records(head=2)
+        if worksheet.title in [
+            "questions",
+            "choices",
+            "options",
+            "settings",
+            "screening",
+            "segments",
+        ]:
+            data[worksheet.title] = worksheet.get_all_records(head=2)
 
     return data
 
