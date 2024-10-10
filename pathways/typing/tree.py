@@ -436,7 +436,7 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
 
     begin_group = {
         "type": "begin_group",
-        "name": "typing",
+        "name": "typing_begin",
         "relevant": settings_config.get("typing_group_relevant"),
     }
 
@@ -508,7 +508,7 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
 
             survey.append(row)
 
-    end_group = {"type": "end_group", "name": "typing"}
+    end_group = {"type": "end_group", "name": "typing_end"}
     survey.append(end_group)
 
     return survey
