@@ -542,7 +542,7 @@ def settings_worksheet(settings_config: dict) -> list[dict]:
         {
             "form_title": settings_config.get("form_title"),
             "form_id": settings_config.get("form_id"),
-            "version": datetime.now().strftime("%Y%m%d%H%M%S"),
+            "version": datetime.now().strftime("%y%m%d%H%M"),
             "default_language": settings_config.get("default_language", "English (en)"),
             "allow_choices_duplicates": settings_config.get("allow_choices_duplicates", "yes"),
         }
