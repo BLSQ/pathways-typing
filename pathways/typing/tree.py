@@ -193,7 +193,8 @@ class SurveyNode(Node):
         # nb: no value will be stored if the user does not reach that node
         if var == "segment":
             self.type = "calculate"
-            self.calculation = str(self.data.get("cart_cluster"))
+            self.required = "FALSE"
+            self.calculation = f"'{str(self.data.get('cart_cluster'))}'"
 
         # node is not a leaf: fetch associated question data from config
         else:
