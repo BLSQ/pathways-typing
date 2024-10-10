@@ -475,7 +475,7 @@ def survey_worksheet(root: Node, settings_config: dict) -> list[dict]:
         row["relevant"] = node.relevant
 
         # by default, all questions are required except questions of type "select_multiple"
-        if node.type in ["select_one", "integer", "decimal", "text"]:
+        if node.type.startswith("select") or node.type in ["integer", "decimal", "text"]:
             row["required"] = "TRUE"
         elif node.type in ["select_multiple"]:
             row["required"] = "FALSE"
