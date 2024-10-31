@@ -70,6 +70,17 @@ def _link(id_a: str, id_b: str, label: str = None) -> str:
     return f"{id_a} --> {id_b}"
 
 
+def _name(node: Node) -> str:
+    """Generate unique name for a node.
+
+    Node name is a combination of the strata and the cart index (ex: "R12" or "U24").
+    """
+    name = ""
+    if node.strata:
+        name += node.strata[0].upper()
+    return name + str(node.data.get("cart_index", 0))
+
+
 def cart_diagram(root: Node) -> str:
     """Generate a diagram of the CART tree with the Mermaid language.
 
@@ -83,14 +94,7 @@ def cart_diagram(root: Node) -> str:
 
     # draw one shape per node
     for n in root.preorder():
-        prefix = "n"
-        strata = n.data.get("cart_strata")
-        if strata:
-            strata = strata[0]
-        else:
-            strata = ""
-        cart_index = n.data.get("cart_index", 0)
-        name = prefix + str(strata) + str(cart_index)
+        name = _name(n)
 
         # label is cluster number for leaf nodes
         if n.data.get("is_leaf"):
@@ -104,39 +108,20 @@ def cart_diagram(root: Node) -> str:
         diagram += "\t" + _shape(name, name, label, shape_type) + "\n"
 
     # draw links between shapes
+    # we iterate over the tree in preorder and draw a link from parent to left & right childs
     for n in root.preorder():
-        prefix = "n"
-        strata = n.data.get("cart_strata")
-        if strata:
-            strata = strata[0]
-        else:
-            strata = ""
-        cart_index = n.data.get("cart_index", 0)
-        parent = prefix + str(strata) + str(cart_index)
+        parent = _name(n)
 
         if _left(n):
-            prefix = "n"
-            strata = _left(n).data.get("cart_strata")
-            if strata:
-                strata = strata[0]
-            else:
-                strata = ""
-            cart_index = _left(n).data.get("cart_index", 0)
-            child = prefix + str(strata) + str(cart_index)
-
-            diagram += "\t" + _link(parent, child, "yes") + "\n"
+            child = _name(_left(n))
+            label = "yes"
 
         if _right(n):
-            prefix = "n"
-            strata = _right(n).data.get("cart_strata")
-            if strata:
-                strata = strata[0]
-            else:
-                strata = ""
-            cart_index = _right(n).data.get("cart_index", 0)
-            child = prefix + str(strata) + str(cart_index)
+            child = _name(_right(n))
+            label = "no"
 
-            diagram += "\t" + _link(parent, child, "no") + "\n"
+        if _left(n) or _right(n):
+            diagram += "\t" + _link(parent, child, label) + "\n"
 
     return diagram
 

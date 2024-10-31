@@ -171,6 +171,7 @@ class SurveyNode(Node):
         self.label: dict[str, str] = None
         self.hint: dict[str, str] = None
         self.required: bool = False
+        self.strata: str | None = None
         self.calculation: str = None
         self.relevant: str = None
         self.choice_list: str = None
@@ -416,6 +417,9 @@ def build_binary_tree(frame: list[dict], strata: str = None) -> Node:
         else:
             name = data["cart_var"]
         node = SurveyNode(name=name, data=data)
+
+        # assign strata as attribute
+        node.strata = strata
 
         nodes[i] = node
 
