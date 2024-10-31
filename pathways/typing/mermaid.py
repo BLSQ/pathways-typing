@@ -75,7 +75,7 @@ def _name(node: Node) -> str:
 
     Node name is a combination of the strata and the cart index (ex: "R12" or "U24").
     """
-    name = ""
+    name = "N"
     if node.strata:
         name += node.strata[0].upper()
     return name + str(node.data.get("cart_index", 0))
@@ -114,14 +114,11 @@ def cart_diagram(root: Node) -> str:
 
         if _left(n):
             child = _name(_left(n))
-            label = "yes"
+            diagram += "\t" + _link(parent, child, "yes") + "\n"
 
         if _right(n):
             child = _name(_right(n))
-            label = "no"
-
-        if _left(n) or _right(n):
-            diagram += "\t" + _link(parent, child, label) + "\n"
+            diagram += "\t" + _link(parent, child, "no") + "\n"
 
     return diagram
 
