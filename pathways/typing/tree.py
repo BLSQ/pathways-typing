@@ -393,7 +393,6 @@ def build_binary_tree(frame: list[dict], strata: str = None) -> Node:
             "cart_var": n["var"].lower().replace(".", "_"),
             "cart_rule": rule,
             "cart_cluster": n["yval"],
-            "cart_strata": strata,
         }
 
         # is this the root node?
