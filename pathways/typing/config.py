@@ -90,7 +90,10 @@ def get_choices(data: dict) -> dict:
         # spreadsheet
         target_value = row["target_value"]
         if choice_list != "yesno":
-            target_value = str(target_value)
+            if isinstance(target_value, str) and target_value.isnumeric():
+                target_value = int(target_value)
+            else:
+                target_value = str(target_value)
 
         choices[choice_list].append(
             {

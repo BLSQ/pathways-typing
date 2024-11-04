@@ -234,7 +234,12 @@ class SurveyNode(Node):
             if not isinstance(rule.values, list):
                 choices = []
                 for choice in self.parent.choices:
-                    if rule.operator(choice["target_value"], rule.values):
+                    # target value should be numeric
+                    target_value = choice["target_value"]
+                    if isinstance(target_value, str):
+                        target_value = float(target_value)
+
+                    if rule.operator(target_value, rule.values):
                         choices.append(choice["name"])
 
             # multiple values in CART rule
