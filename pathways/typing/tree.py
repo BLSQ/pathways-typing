@@ -235,7 +235,6 @@ class SurveyNode(Node):
                 choices = []
                 for choice in self.parent.choices:
                     # target value should be numeric
-                    print(choice)
                     target_value = choice["target_value"]
                     if isinstance(target_value, str):
                         target_value = float(target_value)
