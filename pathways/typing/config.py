@@ -1,29 +1,53 @@
 """Read configuration from a google spreadsheet."""
 
+from pathlib import Path
+
 import gspread
+import polars as pl
 import yaml
 from oauth2client.service_account import ServiceAccountCredentials
 
-from pathways.typing.exceptions import ConfigError
+
+def read_excel_spreadsheet(fp: Path) -> pl.DataFrame:
+    """Read Excel spreadsheet.
+
+    Parameters
+    ----------
+    fp : Path
+        Path to Excel spreadsheet
+
+    Returns
+    -------
+    pl.DataFrame
+        DataFrame with data from the Excel spreadsheet
+    """
+    return pl.read_rexcel(
+        fp, engine="calamine", read_options={"header_row": 1}, sheet_id=0, raise_if_empty=False
+    )
 
 
-def read_spreadsheet(url: str, credentials: dict) -> dict:
+def read_google_spreadsheet(url: str, credentials: dict) -> dict:
     """Read configuration spreadsheet from Google Sheets.
 
-    Args:
-        url (str): URL of the Google Sheets document
-        credentials (dict): Google API credentials
+    Parameters
+    ----------
+    url : str
+        URL of the Google Sheet
+    credentials : dict
+        Google service account credentials
 
-    Returns:
-        dict: configuration data with worksheet title as key and worksheet content as value
+    Returns
+    -------
+    dict
+        Configuration data with worksheet title as key and worksheet content as value
     """
-    SCOPE = [
+    scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive.file",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials, SCOPE)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials, scope)
     client = gspread.authorize(creds)
     spreadsheet = client.open_by_url(url)
 
@@ -42,148 +66,105 @@ def read_spreadsheet(url: str, credentials: dict) -> dict:
     return data
 
 
-def get_questions(data: dict) -> dict:
+def get_questions_config(rows: list[dict]) -> dict:
     """Get questions from the configuration spreadsheet.
 
-    Args:
-        data (dict): configuration data from the spreadsheet
+    Parameters
+    ----------
+    rows : list[dict]
+        Rows from the questions worksheet
 
-    Returns:
-        dict: questions with question id as keys and question data as values
+    Returns
+    -------
+    dict
+        Questions config with question id as keys
     """
-    questions = {}
-
-    for row in data["questions"]:
-        name = row["question_name"]
-
-        questions[name] = {
-            "type": row["question_type"],
-            "label": {col: row[col] for col in row if col.startswith("label")},
-            "hint": {col: row[col] for col in row if col.startswith("hint")},
-            "choice_list": row["choice_list"],
-        }
-
-    return questions
+    questions_config = {}
+    for question in rows:
+        questions_config[question["question_name"]] = question
+    return questions_config
 
 
-def get_choices(data: dict) -> dict:
+def get_choices_config(rows: list[dict]) -> dict:
     """Get choices from the configuration spreadsheet.
 
-    Args:
-        data (dict): configuration data from the spreadsheet
+    Parameters
+    ----------
+    rows : list[dict]
+        Rows from the choices worksheet
 
-    Returns:
-        dict: choices with choice list id as keys and choices as values
+    Returns
+    -------
+    dict
+        Choices config with choice list id as keys
     """
-    choices = {}
-
-    for row in data["choices"]:
-        choice_list = row["choice_list"]
-
-        if choice_list not in choices:
-            choices[choice_list] = []
-
-        # at this point, all cart values corresponding to choices should be string except for the
-        # "yesno" binary choice list where 0 = no and 1 = yes. The forced conversion to strings is
-        # needed because some of the categorical values in the CART dataset are integer-like
-        # strings, which are automatically converted to integer data types in the google
-        # spreadsheet
-        target_value = row["target_value"]
-        if choice_list != "yesno":
-            if isinstance(target_value, str) and target_value.isnumeric():
-                target_value = int(target_value)
-            else:
-                target_value = str(target_value)
-
-        choices[choice_list].append(
-            {
-                "name": row["name"],
-                "label": {col: row[col] for col in row if col.startswith("label")},
-                "target_value": target_value,
-            }
-        )
-
-    return choices
+    choices_config = {}
+    for choice in rows:
+        choice_list = choice["choice_list"]
+        if choice_list not in choices_config:
+            choices_config[choice_list] = []
+        choices_config[choice_list].append(choice)
+    return choices_config
 
 
-def get_options(data: dict) -> list[dict]:
+def get_options_config(rows: list[dict]) -> list[dict]:
     """Get options from the configuration spreadsheet.
 
-    Args:
-        data (dict): configuration data from the spreadsheet
-    Returns:
-        dict: form generation options as a list of dict
+    Parameters
+    ----------
+    rows : list[dict]
+        Rows from the options worksheet
+
+    Returns
+    -------
+    list[dict]
+        Options config as a list of dict
     """
-    options = []
-
-    for row in data["options"]:
-        options.append(
-            {
-                "option": row["option"],
-                "config": yaml.safe_load(row["config"]),
-            }
-        )
-
-    return options
+    options_config = []
+    for option in rows:
+        option["config"] = yaml.safe_load(option["config"])
+        options_config.append(option)
+    return options_config
 
 
-def get_settings(data: dict) -> dict:
-    """Get form-level settings from the configuration spreadsheet.
+def get_segments_config(rows: list[dict]) -> dict:
+    """Get segments names from the configuration spreadsheet.
 
-    Args:
-        data (dict): configuration data from the spreadsheet
-    Returns:
-        dict: form-level settings
+    Parameters
+    ----------
+    rows : list[dict]
+        Rows from the segments worksheet
+
+    Returns
+    -------
+    dict
+        Segments config with source segment name as key and target segment name as value.
     """
-    settings = {}
+    segments_config = {}
+    for row in rows:
+        strata = row["strata"]
+        cluster = row["cluster"]
+        segment = row["segment"]
+        if strata not in segments_config:
+            segments_config[strata] = {}
+        segments_config[strata][cluster] = segment
+    return segments_config
 
-    if "settings" not in data:
-        return None
 
-    for row in data["settings"]:
-        settings[row["key"]] = row["value"]
+def get_settings(rows: list[dict]) -> dict:
+    """Get form settings from the configuration spreadsheet.
 
-    return settings
+    Parameters
+    ----------
+    rows : list[dict]
+        Rows from the settings worksheet
 
-
-def get_screening(data: dict) -> list[dict]:
-    """Get screening questions from the configuration spreadsheet.
-
-    Args:
-        data (dict): configuration data from the spreadsheet
-    Returns:
-        list[dict]: screening config with one dict per screening question
+    Returns
+    -------
+    dict
+        Key:value settings as a dict
     """
-    return data.get("screening")
-
-
-def validate_config(config_data: dict, cart_urban: list[dict], cart_rural: list[dict]):
-    """Validate config data from spreadsheet."""
-    # are all CART variables included in the config?
-    for node in cart_urban + cart_rural:
-        var = node["var"].replace(".", "_").lower()
-        if var != "<leaf>":
-            if var not in config_data["questions"]:
-                raise ConfigError("Missing question data for CART variable `{}`".format(var))
-
-    # are all additional questions from options included in the config?
-    for option in config_data["options"]:
-        for entry, value in option["config"].items():
-            if entry.startswith("dst_question") or entry.startswith("src_question"):
-                if value not in config_data["questions"]:
-                    raise ConfigError(
-                        "Missing question data for additional question `{}`".format(value)
-                    )
-
-    for name, question in config_data["questions"].items():
-        # check question types
-        if question.get("type") not in [
-            "calculate",
-            "select_one",
-            "select_multiple",
-            "integer",
-            "decimal",
-        ]:
-            raise ConfigError(
-                "Unspported question type `{}` for question `{}`".format(question.get("type"), name)
-            )
+    settings_config = {}
+    for row in rows:
+        settings_config[row["key"]] = row["value"]
+    return settings_config
