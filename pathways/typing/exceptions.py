@@ -1,22 +1,9 @@
-class ConfigError(Exception):
-    """Error when parsing configuration spreadsheet."""
-
-    pass
+"""Typing tool exceptions."""
 
 
-class CARTError(Exception):
-    """Error in parsing CART output."""
-
-    pass
-
-
-class TreeError(Exception):
-    """Error when building the typing tree from the CART."""
-
-    pass
-
-
-class FormError(Exception):
+class TypingFormError(Exception):
     """Error during form generation."""
 
-    pass
+
+class MermaidError(Exception):
+    """Error during mermaid generation."""

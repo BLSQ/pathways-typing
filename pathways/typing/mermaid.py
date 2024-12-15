@@ -2,162 +2,163 @@
 
 See <https://mermaid.js.org/> for more information about the Mermaid language.
 
-Notes:
+Notes
+-----
     - Mermaid diagrams are generated as strings.
     - We only use a subset of the mermaid language to ensure compatibility with Whimsical import
       feature.
 """
 
-from pathways.typing.tree import Node, SurveyNode
+from typing import Literal
+
+from .exceptions import MermaidError
+from .tree import Node, filter_choices
+
+ShapeType = Literal[
+    "rectangle",
+    "stadium",
+    "hexagon",
+    "parallelogram",
+    "prallelogram_alt",
+    "circle",
+    "trapezoid",
+    "trapezoid_alt",
+    "rhombus",
+]
 
 
-def _left(node: Node) -> Node:
-    """Get the left child of a node."""
-    n = None
-    for child in node.children:
-        if child.data["is_left_child"]:
-            n = child
-            break
-    return n
+def clean_label(label: str) -> str:
+    """Clean label string to not break whimsical import."""
+    for char in ["(", ")", "[", "]"]:
+        label = label.replace(char, " ")
+    return label.replace("\n", "\\n")
 
 
-def _right(node: Node) -> Node:
-    """Get the right child of a node."""
-    n = None
-    for child in node.children:
-        if child.data["is_right_child"]:
-            n = child
-            break
-    return n
-
-
-def _shape(shape_id: str, title: str, description: str, shape_type: str = "rectangle") -> str:
-    """Draw mermaid shape.
-
-    Args:
-        shape_id (str): shape id
-        title (str): shape title (displayed at the top of the shape)
-        description (str): shape description (displayed at the bottom of the shape)
-        shape_type (str): shape type (default: "rectangle"). Available shape types are:
-            "rectangle", "round_edges", "stadium", "hexagon", "parallelogram", and "circle".
-
-    Returns:
-        str: mermaid shape
-    """
-    SHAPES = {
+def draw_shape(shape_id: str, label: str, shape_type: ShapeType = "rectangle") -> str:
+    """Print mermaid shape."""
+    shapes = {
         "rectangle": ("[", "]"),
-        "round_edges": ("(", ")"),
         "stadium": ("([", "])"),
         "circle": ("((", "))"),
         "hexagon": ("{{", "}}"),
         "parallelogram": ("[/", "/]"),
+        "parallelogram_alt": ("[\\", "\\]"),
+        "trapezoid": ("[/", "\\]"),
+        "trapezoid_alt": ("[\\", "/]"),
+        "rhombus": ("{", "}"),
+    }
+    begin, end = shapes[shape_type]
+    label = clean_label(label)
+    return f"{shape_id}{begin}{label}{end}"
+
+
+def draw_link(shape_a: str, shape_b: str, label: str | None = None) -> str:
+    """Print mermaid link between two shapes."""
+    if label:
+        label = clean_label(label)
+        return f"{shape_a} -->|{label}| {shape_b}"
+    return f"{shape_a} --> {shape_b}"
+
+
+def _link_label(node: Node) -> str:
+    ope = node.cart_rule.operator
+    value = node.cart_rule.value
+    if ope == "in":
+        return ", ".join(value)
+    if ope in [">", "<"]:
+        return f"{ope} {value}"
+    msg = f"Unsupported operator: {ope}"
+    raise MermaidError(msg)
+
+
+def create_cart_diagram(root: Node) -> str:
+    """Create mermaid diagram for CART."""
+    header = "flowchart TD"
+
+    shapes_lst = []
+    for node in root.preorder():
+        if node.is_leaf:
+            label = node.cart.cluster
+            shape_type = "stadium"
+        else:
+            label = node.cart.left.var
+            shape_type = "rectangle"
+        shape = draw_shape(node.uid, label, shape_type)
+        shapes_lst.append(shape)
+
+    links = []
+    for node in root.preorder():
+        if node.is_root:
+            continue
+        link = draw_link(node.parent.uid, node.uid, _link_label(node))
+        links.append(link)
+
+    return "\n\t".join([header, *shapes_lst, *links])
+
+
+def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
+    """Get label for form shape."""
+    if node.name == "segment":
+        return node.question.calculation.replace("'", "")
+    label = node.question.label.get(f"label::{language}")
+    if label:
+        return label
+    return node.name
+
+
+def get_form_link_label(node: Node, language: str = "English (en)") -> str:
+    """Get label for form link between current node and its parent."""
+    if node.question.choices_from_parent:
+        choices = [
+            choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
+        ]
+        return ", ".join(choices)
+
+    if node.parent.question.type == "calculate" and node.cart_rule:
+        for parent in node.parents:
+            if parent.name == node.cart_rule.var.replace(".", "_").lower():
+                choices = filter_choices(parent.question.choices, node.cart_rule)
+                labels = [choice.label[f"label::{language}"] for choice in choices]
+                return ", ".join(labels)
+
+    if node.parent.question.type == "calculate" and node.cart_rule:
+        return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
+
+    return ""
+
+
+def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
+    """Create mermaid diagram for typing form."""
+    header = "flowchart TD"
+
+    shapes = {
+        "segment": "stadium",
+        "select_one": "rectangle",
+        "select_multiple": "round_edges",
+        "calculate": "parallelogram",
+        "integer": "trapezoid",
+        "decimal": "trapezoid_alt",
+        "text": "circle",
+        "note": "parallelogram_alt",
     }
 
-    shp = SHAPES[shape_type]
+    shapes_lst = []
+    links = []
+    for node in root.preorder():
+        if skip_notes and node.question.type == "note":
+            continue
+        shape_type = "circle" if node.name == "segment" else shapes[node.question.type]
+        shape_label = get_form_shape_label(node)
+        shape = draw_shape(node.uid, shape_label, shape_type)
+        shapes_lst.append(shape)
 
-    for char in ["[", "]", "(", ")", "_", "\n"]:
-        description = description.replace(char, " ")
+        if node.is_root:
+            continue
 
-    return f"{shape_id}{shp[0]}{title}\\n{description}{shp[1]}"
+        link_label = get_form_link_label(node)
+        link = draw_link(
+            shape_a=node.parent.question.name, shape_b=node.question.name, label=link_label
+        )
+        links.append(link)
 
-
-def _link(id_a: str, id_b: str, label: str = None) -> str:
-    """Draw mermaid link between two shapes."""
-    if label:
-        for char in ["/", "_"]:
-            label = label.replace(char, " ")
-        return f"{id_a} -->|{label}| {id_b}"
-    return f"{id_a} --> {id_b}"
-
-
-def _name(node: Node) -> str:
-    """Generate unique name for a node.
-
-    Node name is a combination of the strata and the cart index (ex: "R12" or "U24").
-    """
-    name = "N"
-    if node.strata:
-        name += node.strata[0].upper()
-    return name + str(node.data.get("cart_index", 0))
-
-
-def cart_diagram(root: Node) -> str:
-    """Generate a diagram of the CART tree with the Mermaid language.
-
-    Args:
-        root (Node): root node of the CART tree
-
-    Returns:
-        str: Mermaid diagram of the CART tree
-    """
-    diagram = "flowchart TD\n"
-
-    # draw one shape per node
-    for n in root.preorder():
-        name = _name(n)
-
-        # label is cluster number for leaf nodes
-        if n.data.get("is_leaf"):
-            label = f"Cluster {n.data['cart_cluster']}"
-            shape_type = "circle"
-        # label is split rule for non-leaf nodes
-        else:
-            label = f"{_left(n).data['cart_rule']}"
-            shape_type = "rectangle"
-
-        diagram += "\t" + _shape(name, name, label, shape_type) + "\n"
-
-    # draw links between shapes
-    # we iterate over the tree in preorder and draw a link from parent to left & right childs
-    for n in root.preorder():
-        parent = _name(n)
-
-        if _left(n):
-            child = _name(_left(n))
-            diagram += "\t" + _link(parent, child, "yes") + "\n"
-
-        if _right(n):
-            child = _name(_right(n))
-            diagram += "\t" + _link(parent, child, "no") + "\n"
-
-    return diagram
-
-
-def form_diagram(root: SurveyNode) -> str:
-    """Generate a diagram of the form tree with the Mermaid language.
-
-    Args:
-        root (Node): root node of the form tree
-
-    Returns:
-        str: Mermaid diagram of the form tree
-    """
-    diagram = "flowchart TD\n"
-
-    for n in root.preorder():
-        name = n.uid
-
-        if n.is_leaf:
-            shape_type = "hexagon"
-        elif n.type == "calculate":
-            shape_type = "parallelogram"
-        else:
-            shape_type = "rectangle"
-
-        if n.is_leaf:
-            label = n.calculation
-            diagram += "\t" + _shape(name, "Segment", label, shape_type) + "\n"
-
-        else:
-            label = n.label["label::English (en)"]
-            diagram += "\t" + _shape(name, name, label, shape_type) + "\n"
-
-    for n in root.preorder():
-        for child in n.children:
-            if child.data.get("parent_choices"):
-                label = ", ".join([f"'{c}'" for c in child.data["parent_choices"]])
-            else:
-                label = None
-            diagram += "\t" + _link(id_a=n.uid, id_b=child.uid, label=label) + "\n"
-
-    return diagram
+    return "\n\t".join([header, *shapes_lst, *links])
