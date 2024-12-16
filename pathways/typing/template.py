@@ -366,7 +366,7 @@ def write_segments(
         worksheet.write_row(row_i, 0, ["rural", cluster, ""], cell_format=default_fmt)
         row_i += 1
 
-    for cluster in ylevels_urban["ylevels"]:
+    for cluster in ylevels_urban:
         worksheet.write_row(row_i, 0, ["urban", cluster, ""], cell_format=default_fmt)
         row_i += 1
 
