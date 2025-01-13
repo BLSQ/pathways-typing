@@ -168,3 +168,25 @@ def get_settings(rows: list[dict]) -> dict:
     for row in rows:
         settings_config[row["key"]] = row["value"]
     return settings_config
+
+
+def get_config(spreadsheet: dict) -> dict:
+    """Get configuration from the spreadsheet.
+
+    Parameters
+    ----------
+    spreadsheet : dict
+        Configuration spreadsheet data
+
+    Returns
+    -------
+    dict
+        Configuration data with worksheet title as key and worksheet content as value
+    """
+    config = {}
+    config["questions"] = get_questions_config(spreadsheet["questions"])
+    config["choices"] = get_choices_config(spreadsheet["choices"])
+    config["options"] = get_options_config(spreadsheet["options"])
+    config["segments"] = get_segments_config(spreadsheet["segments"])
+    config["settings"] = get_settings(spreadsheet["settings"])
+    return config
