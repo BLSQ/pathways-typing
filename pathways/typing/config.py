@@ -143,8 +143,8 @@ def get_segments_config(rows: list[dict]) -> dict:
     segments_config = {}
     for row in rows:
         strata = row["strata"]
-        cluster = row["cluster"]
-        segment = row["segment"]
+        cluster = str(row["cluster"])
+        segment = str(row["segment"])
         if strata not in segments_config:
             segments_config[strata] = {}
         segments_config[strata][cluster] = segment
