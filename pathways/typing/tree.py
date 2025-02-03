@@ -143,6 +143,7 @@ class Node:
         self.cart_rule: CARTRule | None = None
         self.question: Question | None = None
         self.uid: str = generate_uid(name)
+        self.conditions: list[str] = []
 
     def __repr__(self) -> str:
         return f"Node(name={self.name}, uid={self.uid})"
@@ -443,6 +444,10 @@ def update_xpath_variables(node: Node, expression: str) -> str:
     Example: ${ed_lev3} -> ${ed_lev3_abc123}
     """
     variables = extract_xpath_variables(expression)
+
+    if variables is None:
+        return expression
+
     mapping = {}
     for var in variables:
         uid = None
@@ -488,7 +493,7 @@ def filter_choices(choices: list[Choice], cart_rule: CARTRule) -> list[Choice]:
             filtered.append(choice)
         if cart_rule.operator == "<" and float(choice.cart_value) < cart_rule.value:
             filtered.append(choice)
-        if cart_rule.operator == "in" and choice.cart_value in cart_rule.value:
+        if cart_rule.operator == "in" and str(choice.cart_value) in cart_rule.value:
             filtered.append(choice)
 
     return filtered
