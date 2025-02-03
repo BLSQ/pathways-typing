@@ -65,7 +65,7 @@ def add_segment_note(
     node: Node, note_label: dict[str, str], segments_config: dict | None = None
 ) -> None:
     """Add note once segment is assigned."""
-    segment = node.cart.cluster
+    segment = str(node.cart.cluster)
     mapping = segments_config.get(node.cart.strata) if segments_config else None
     if mapping and segment in mapping:
         segment = mapping[segment]
@@ -107,7 +107,7 @@ def enforce_relevance(root: Node) -> Node:
     # use relevance rule from parent by default
     for node in new_root.preorder():
         if not node.is_root and not node.question.conditions:
-            node.question.conditions = node.parent.conditions
+            node.question.conditions = node.parent.question.conditions
 
     # join relevance rules from all parent nodes
     for node in new_root.preorder():
