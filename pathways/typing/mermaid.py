@@ -112,7 +112,7 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
         choices = [
             choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
         ]
-        return ", ".join(choices)
+        return ", ".join([str(choice) for choice in choices])
 
     if node.parent.question.type == "calculate" and node.cart_rule:
         for parent in node.parents:
