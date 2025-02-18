@@ -117,6 +117,8 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     if node.parent.question.type == "calculate" and node.cart_rule:
         for parent in node.parents:
             if parent.name == node.cart_rule.var.replace(".", "_").lower():
+                if not parent.question.choices:
+                    return ""
                 choices = filter_choices(parent.question.choices, node.cart_rule)
                 labels = [choice.label[f"label::{language}"] for choice in choices]
                 return ", ".join(labels)
@@ -134,7 +136,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     shapes = {
         "segment": "stadium",
         "select_one": "rectangle",
-        "select_multiple": "round_edges",
+        "select_multiple": "rectangle",
         "calculate": "parallelogram",
         "integer": "trapezoid",
         "decimal": "trapezoid_alt",
