@@ -114,8 +114,9 @@ def enforce_relevance(root: Node) -> Node:
         if node.is_root:
             continue
 
-        # parent question answer should not be null
-        node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
+        # parent question answer should not be null, except if it's a select_multiple question
+        if node.parent.question.type != "select_multiple":
+            node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
 
         # all parent relevance rules
         for parent in node.parents:
