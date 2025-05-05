@@ -26,7 +26,7 @@ def read_excel_spreadsheet(fp: Path) -> pl.DataFrame:
     )
 
 
-def read_google_spreadsheet(url: str, credentials: dict) -> dict:
+def read_google_spreadsheet(url: str, credentials: dict) -> gspread.spreadsheet.Spreadsheet:
     """Read configuration spreadsheet from Google Sheets.
 
     Parameters
@@ -49,21 +49,7 @@ def read_google_spreadsheet(url: str, credentials: dict) -> dict:
     ]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials, scope)
     client = gspread.authorize(creds)
-    spreadsheet = client.open_by_url(url)
-
-    data = {}
-    for worksheet in spreadsheet.worksheets():
-        if worksheet.title in [
-            "questions",
-            "choices",
-            "options",
-            "settings",
-            "screening",
-            "segments",
-        ]:
-            data[worksheet.title] = worksheet.get_all_records(head=2)
-
-    return data
+    return client.open_by_url(url)
 
 
 def get_questions_config(rows: list[dict]) -> dict:
@@ -170,23 +156,35 @@ def get_settings(rows: list[dict]) -> dict:
     return settings_config
 
 
-def get_config(spreadsheet: dict) -> dict:
+def get_config(spreadsheet: gspread.spreadsheet.Spreadsheet) -> dict:
     """Get configuration from the spreadsheet.
 
     Parameters
     ----------
-    spreadsheet : dict
-        Configuration spreadsheet data
+    spreadsheet : Spreadsheet
+        Google spreadsheet object (from gspread library)
 
     Returns
     -------
     dict
         Configuration data with worksheet title as key and worksheet content as value
     """
+    data = {}
+    for worksheet in spreadsheet.worksheets():
+        if worksheet.title in [
+            "questions",
+            "choices",
+            "options",
+            "settings",
+            "screening",
+            "segments",
+        ]:
+            data[worksheet.title] = worksheet.get_all_records(head=2)
+
     config = {}
-    config["questions"] = get_questions_config(spreadsheet["questions"])
-    config["choices"] = get_choices_config(spreadsheet["choices"])
-    config["options"] = get_options_config(spreadsheet["options"])
-    config["segments"] = get_segments_config(spreadsheet["segments"])
-    config["settings"] = get_settings(spreadsheet["settings"])
+    config["questions"] = get_questions_config(data["questions"])
+    config["choices"] = get_choices_config(data["choices"])
+    config["options"] = get_options_config(data["options"])
+    config["segments"] = get_segments_config(data["segments"])
+    config["settings"] = get_settings(data["settings"])
     return config
