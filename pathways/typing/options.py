@@ -134,11 +134,12 @@ def get_choice_filter(node: Node) -> str | None:
     if not node.cart.left.not_present or not node.question.choices:
         return None
 
-    choices = [
-        choice
-        for choice in node.question.choices
-        if choice.cart_value in node.cart.left.not_present
-    ]
+    choices = []
+    for choice in node.question.choices:
+        if choice.cart_value in node.cart.left.not_present:
+            choices.append(choice)
+        elif str(choice.cart_value) in node.cart.left.not_present:
+            choices.append(choice)
 
     # also remove choice from children list of parent choices
     # nb: this attribute is only used for mermaid generation
