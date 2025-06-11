@@ -46,6 +46,21 @@ def apply_split_option(
     node_b.cart = node.cart
 
 
+def apply_hide_option(node: Node, option_config: dict) -> None:
+    """Apply hide option to form node."""
+    # append relevance condition
+    relevant = option_config["relevant"]
+    relevant = update_xpath_variables(node, relevant)
+    if relevant not in node.question.conditions:
+        node.question.conditions.append(relevant)
+
+    # remove from relevance conditions in children
+    for child in node.preorder():
+        for condition in child.question.conditions:
+            if node.name in condition:
+                child.question.conditions.remove(condition)
+
+
 def apply_options(
     root: Node, options_config: list[dict], questions_config: dict, choices_config: dict
 ) -> Node:
@@ -58,6 +73,8 @@ def apply_options(
                 apply_calculate_option(node, option["config"], questions_config, choices_config)
             if option["option"] == "split" and node.name == src_question:
                 apply_split_option(node, option["config"], questions_config, choices_config)
+            if option["option"] == "hide" and node.name == src_question:
+                apply_hide_option(node, option["config"])
     return new_root
 
 
