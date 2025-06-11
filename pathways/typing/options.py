@@ -73,8 +73,6 @@ def apply_options(
                 apply_calculate_option(node, option["config"], questions_config, choices_config)
             if option["option"] == "split" and node.name == src_question:
                 apply_split_option(node, option["config"], questions_config, choices_config)
-            if option["option"] == "hide" and node.name == src_question:
-                apply_hide_option(node, option["config"])
     return new_root
 
 
