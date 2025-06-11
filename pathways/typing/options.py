@@ -206,3 +206,14 @@ def skip_duplicate_questions(root: Node) -> Node:
                 node.question.calculation = f"${{{parent.question.name}}}"
 
     return new_root
+
+
+def mark_as_required(root: Node) -> Node:
+    """Mark questions as required by default."""
+    new_root = copy.deepcopy(root)
+    for node in new_root.preorder():
+        if node.question.type in ("integer", "decimal", "select_one", "text"):
+            node.question.required = True
+        else:
+            node.question.required = False
+    return new_root
