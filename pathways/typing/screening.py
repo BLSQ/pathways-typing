@@ -39,10 +39,12 @@ def add_screening_questions(
     Returns:
         list[dict]: updated survey worksheet
     """
-    screening_rows: list[dict[str, Any]] = []
+    before: list[dict[str, Any]] = []
+    after: list[dict[str, Any]] = []
 
     for question in screening_questions:
         row = question.copy()
+        where = row.pop("where", "before")
         if not row.get("required"):
             row["required"] = _required(question["type"])
 
@@ -57,9 +59,12 @@ def add_screening_questions(
                 if key.startswith("required_message"):
                     row[key] = value
 
-        screening_rows.append(row)
+        if where == "before":
+            before.append(row)
+        else:
+            after.append(row)
 
-    return merge_rows(screening_rows, survey_worksheet)
+    return merge_rows(rows_a=merge_rows(before, survey_worksheet), rows_b=after)
 
 
 def add_screening_choices(
