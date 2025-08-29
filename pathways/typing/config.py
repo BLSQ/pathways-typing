@@ -188,6 +188,6 @@ def get_config(spreadsheet: gspread.spreadsheet.Spreadsheet) -> dict:
     config["options"] = get_options_config(data["options"])
     config["segments"] = get_segments_config(data["segments"])
     config["settings"] = get_settings(data["settings"])
-    config["screening_questions"] = get_questions_config(data["screening_questions"])
-    config["screening_choices"] = get_choices_config(data["screening_choices"])
+    config["screening_questions"] = data["screening_questions"]
+    config["screening_choices"] = data["screening_choices"]
     return config
