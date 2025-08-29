@@ -15,7 +15,7 @@ def apply_calculate_option(
     node.insert_before(new_node)
     node.question.type = "calculate"
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
-    node.question.trigger = update_xpath_variables(node, "${" + option_config["src_question"] + "}")
+    node.question.trigger = update_xpath_variables(node, "${" + option_config["dst_question"] + "}")
     new_node.question.conditions = node.question.conditions
     new_node.question.choices_from_parent = node.question.choices_from_parent
     node.question.choices_from_parent = None
