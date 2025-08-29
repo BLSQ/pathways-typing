@@ -1,4 +1,4 @@
-def _required(question_type: str) -> str:
+def _required(question_type: str) -> str | None:
     if question_type in ["select_one", "text", "integer", "decimal"]:
         return "TRUE"
     elif question_type in ["select_multiple"]:
@@ -28,7 +28,7 @@ def add_screening_questions(
         question_type = question["type"]
 
         if question_type in ["select_one", "select_multiple"]:
-            question_type = f'{question_type} {question["choice_list"]}'
+            question_type = f"{question_type} {question['choice_list']}"
 
         row = {
             "type": question_type,
