@@ -80,6 +80,7 @@ class Question:
     choice_filter: str | None = None
     choices_from_parent: list[Choice] | None = None
     trigger: str | None = None
+    default: str | None = None
 
     @property
     def relevant(self) -> str:
@@ -112,6 +113,7 @@ class Question:
         row["required"] = self.required
         row["choice_filter"] = self.choice_filter
         row["trigger"] = self.trigger
+        row["default"] = self.default
 
         if self.required_message:
             for column, message in self.required_message.items():
