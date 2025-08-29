@@ -59,7 +59,7 @@ def add_screening_questions(
 
         screening_rows.append(row)
 
-    return merge_rows(survey_worksheet, screening_rows)
+    return merge_rows(screening_rows, survey_worksheet)
 
 
 def add_screening_choices(
