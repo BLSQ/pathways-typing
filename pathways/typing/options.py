@@ -2,7 +2,7 @@
 
 import copy
 
-from .tree import Node, Question, create_split_question, update_xpath_variables
+from .tree import Node, Question, create_split_question, update_xpath_variables, xpath_condition
 
 
 def apply_calculate_option(
@@ -217,4 +217,72 @@ def mark_as_required(root: Node) -> Node:
             node.question.required = True
         else:
             node.question.required = False
+    return new_root
+
+
+def exit_deadends(
+    root: Node, segments_config: dict, settings_config: dict, choices_config: dict
+) -> Node:
+    """When the tree reaches a deadend, assign to most probable segment."""
+    new_root = copy.deepcopy(root)
+
+    deadends_identified: list[str] = []
+
+    for node in new_root.preorder():
+        if node.cart and node.cart.left and node.cart.left.not_present:
+            deadend_choices = node.cart.left.not_present
+            if deadend_choices:
+                var = node.name
+                if var not in deadends_identified:
+                    print(f"Detected dead-end at question '{var}'")
+                    deadends_identified.append(var)
+
+                # Get the list of choices leading to deadends
+                deadend_choices_xlsform = []
+                for cart_value in deadend_choices:
+                    for choice in choices_config[var]:
+                        if choice["target_value"] == cart_value:
+                            deadend_choices_xlsform.append(choice["name"])
+                assert len(deadend_choices_xlsform) == len(
+                    deadend_choices
+                ), "Some deadend choices were not found in choices_config"
+                deadend_choices = deadend_choices_xlsform
+
+                # Get segment name from cluster number
+                segment = str(node.cart.cluster)
+                mapping = segments_config.get(node.cart.strata) if segments_config else None
+                if mapping and segment in mapping:
+                    segment = mapping[segment]
+
+                # Create a new leaf node to assign the segment
+                new_node = Node(name="segment")
+                new_node.question = Question(
+                    name=new_node.uid, type="calculate", required=True, calculation=f"'{segment}'"
+                )
+                node.add_child(new_node)
+                new_node.question.conditions = node.question.conditions.copy()
+
+                if len(deadend_choices) > 1:
+                    conditions = [xpath_condition(var, "=", v) for v in deadend_choices]
+                    expression = " or ".join(conditions)
+                else:
+                    expression = xpath_condition(var, "=", deadend_choices[0])
+                expression = update_xpath_variables(new_node, expression)
+                new_node.question.conditions.append(expression)
+
+                # create note for segment
+                note_label = {
+                    key.replace("segment_note", "label"): value
+                    for key, value in settings_config.items()
+                    if key.startswith("segment_note")
+                }
+                label = {key: value.format(segment=segment) for key, value in note_label.items()}
+                probability = node.cart.cluster_probabilities.get(node.cart.cluster, 0)
+                label += f"\n[Lower accuracy guess ({round(probability * 100)}%)]"
+                note_node = Node(name="segment_note")
+                note = Question(name=note_node.uid, type="note", label=label)
+                note_node.question = note
+                note_node.question.conditions = new_node.question.conditions.copy()
+                new_node.add_child(note_node)
+
     return new_root
