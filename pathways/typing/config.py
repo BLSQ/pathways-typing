@@ -1,5 +1,6 @@
 """Read configuration from a google spreadsheet."""
 
+import re
 from pathlib import Path
 
 import gspread
@@ -108,7 +109,8 @@ def get_options_config(rows: list[dict]) -> list[dict]:
     """
     options_config = []
     for option in rows:
-        option["config"] = yaml.safe_load(option["config"])
+        config = yaml.safe_load(option["config"])
+        option["config"] = re.sub(r"\s+", " ", config)
         options_config.append(option)
     return options_config
 
