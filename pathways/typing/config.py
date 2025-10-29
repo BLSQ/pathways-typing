@@ -110,7 +110,10 @@ def get_options_config(rows: list[dict]) -> list[dict]:
     options_config = []
     for option in rows:
         config = yaml.safe_load(option["config"])
-        option["config"] = re.sub(r"\s+", " ", config)
+        calculation = config.get("calculation")
+        if calculation:
+            config["calculation"] = re.sub(r"\s+", " ", calculation)
+        option["config"] = config
         options_config.append(option)
     return options_config
 
