@@ -493,7 +493,7 @@ def filter_choices(choices: list[Choice], cart_rule: CARTRule) -> list[Choice]:
         raise TypingFormError(msg)
 
     for choice in choices:
-        if cart_rule.operator == ">" and float(choice.cart_value) > cart_rule.value:
+        if cart_rule.operator == ">" and float(choice.cart_value) >= cart_rule.value:
             filtered.append(choice)
         if cart_rule.operator == "<" and float(choice.cart_value) < cart_rule.value:
             filtered.append(choice)
