@@ -277,9 +277,10 @@ def exit_deadends(
                     if key.startswith("segment_note")
                 }
                 label = {key: value.format(segment=segment) for key, value in note_label.items()}
-                probability = node.cart.cluster_probabilities.get(node.cart.cluster, 0)
                 for key in label:
-                    label[key] += f"\n[Lower accuracy guess ({round(probability * 100)}%)]"
+                    label[key] += (
+                        "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
+                    )
                 note_node = Node(name="segment_note")
                 note = Question(name=note_node.uid, type="note", label=label)
                 note_node.question = note
