@@ -293,7 +293,7 @@ def exit_deadends(
                         label[key] += deadend_label[key]
                     else:
                          label[key] += (
-                        "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent (Default Message)"
+                        "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
                     )
 
                 note_node = Node(name="segment_note")
