@@ -281,17 +281,16 @@ def exit_deadends(
                     for key, value in note_label.items()
                 }
 
-                # Dead-end low confidence note from settings_config: deadend_note::English (en)/deadend_note::French (fr)
-                deadend_prefix = "deadend_note"
-                deadend_labels = {
-                    key.replace(deadend_prefix, "label"): value
+                # create note for dead-end
+                deadend_label = {
+                    key.replace("deadend_note", "label"): value
                     for key, value in settings_config.items()
-                    if key.startswith(deadend_prefix)
+                    if key.startswith("deadend_note")
                 }
 
                 for key in label:
-                    if key in deadend_labels:
-                        label[key] += deadend_labels[key]
+                    if key in deadend_label:
+                        label[key] += deadend_label[key]
                     else:
                          label[key] += (
                         "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
