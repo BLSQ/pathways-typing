@@ -276,11 +276,26 @@ def exit_deadends(
                     for key, value in settings_config.items()
                     if key.startswith("segment_note")
                 }
-                label = {key: value.format(segment=segment) for key, value in note_label.items()}
+                label = {
+                    key: value.format(segment=segment)
+                    for key, value in note_label.items()
+                }
+
+                # create note for dead-end
+                deadend_label = {
+                    key.replace("deadend_note", "label"): value
+                    for key, value in settings_config.items()
+                    if key.startswith("deadend_note")
+                }
+
                 for key in label:
-                    label[key] += (
+                    if key in deadend_label:
+                        label[key] += deadend_label[key]
+                    else:
+                         label[key] += (
                         "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
                     )
+
                 note_node = Node(name="segment_note")
                 note = Question(name=note_node.uid, type="note", label=label)
                 note_node.question = note
@@ -288,3 +303,5 @@ def exit_deadends(
                 new_node.add_child(note_node)
 
     return new_root
+
+
