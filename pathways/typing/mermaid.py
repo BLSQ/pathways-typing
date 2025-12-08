@@ -165,8 +165,8 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
         links.append(link)
 
         # for leaf nodes, draw arrows to all segments with prob > 0 ---
-        if getattr(node, "class_probabilities", None) and node.is_leaf:
-            for segment_name, prob in node.cluster_probabilities.items():
+        if node.name == "segment" and node.class_probabilities:
+            for segment_name, prob in node.class_probabilities.items():
                 if not prob or prob <= 0:
                     continue
                 # ensure we have a shape for this segment "probability" node
