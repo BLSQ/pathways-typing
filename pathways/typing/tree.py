@@ -313,7 +313,7 @@ def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata) -> Node:
         n.strata = node.strata
         n.cart = node
         n.cart.strata = strata
-        n.class_probabilities = node.class_probabilities
+        n.class_probabilities = node.cluster_probabilities
         nodes[i] = n
 
     for i, node in nodes.items():
