@@ -174,7 +174,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
                     segment_shape_type = shapes["segment"]
                     segment_label = segment_name
                     segment_shape = draw_shape(
-                        segment_name,  # mermaid id for this segment node
+                        segment_name,  
                         segment_label,
                         segment_shape_type,
                     )
@@ -184,8 +184,8 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
                 # link from this leaf node to the segment node, with probability as label
                 prob_label = f"{prob:.2f}"  # or f"{prob*100:.0f}%" if you prefer %
                 prob_link = draw_link(
-                    shape_a=node.question.name,  # from this leaf node
-                    shape_b=segment_name,        # to the segment node
+                    shape_a=node.uid,           # from this leaf node (UID matches shape created above)
+                    shape_b=segment_name,       # to the segment node
                     label=prob_label,
                 )
                 links.append(prob_link)
