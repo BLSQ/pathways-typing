@@ -128,7 +128,7 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
 
     return ""
 
-
+# My changes need to go here for the mermaid diagram
 def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     """Create mermaid diagram for typing form."""
     header = "flowchart TD"
@@ -146,6 +146,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
 
     shapes_lst = []
     links = []
+    drawn_segment_nodes: set[str] = set()
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
@@ -162,5 +163,31 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
             shape_a=node.parent.question.name, shape_b=node.question.name, label=link_label
         )
         links.append(link)
+
+        # for leaf nodes, draw arrows to all segments with prob > 0 ---
+        if getattr(node, "class_probabilities", None) and node.is_leaf:
+            for segment_name, prob in node.cluster_probabilities.items():
+                if not prob or prob <= 0:
+                    continue
+                # ensure we have a shape for this segment "probability" node
+                if segment_name not in drawn_segment_nodes:
+                    segment_shape_type = shapes["segment"]
+                    segment_label = segment_name
+                    segment_shape = draw_shape(
+                        segment_name,  # mermaid id for this segment node
+                        segment_label,
+                        segment_shape_type,
+                    )
+                    shapes_lst.append(segment_shape)
+                    drawn_segment_nodes.add(segment_name)
+
+                # link from this leaf node to the segment node, with probability as label
+                prob_label = f"{prob:.2f}"  # or f"{prob*100:.0f}%" if you prefer %
+                prob_link = draw_link(
+                    shape_a=node.question.name,  # from this leaf node
+                    shape_b=segment_name,        # to the segment node
+                    label=prob_label,
+                )
+                links.append(prob_link)
 
     return "\n\t".join([header, *shapes_lst, *links])

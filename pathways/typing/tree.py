@@ -130,7 +130,8 @@ def generate_uid(prefix: str) -> str:
     name = prefix.lower().replace(".", "_")
     return f"{name}_{suffix}"
 
-
+# This is where I need to change to update the tree structure for the form 
+# that the mermaid diagram will represent
 class Node:
     """A node in the typing tree."""
 
@@ -148,6 +149,7 @@ class Node:
         self.question: Question | None = None
         self.uid: str = generate_uid(name)
         self.conditions: list[str] = []
+        self.class_probabilities: dict[str, float] | None = None
 
     def __repr__(self) -> str:
         return f"Node(name={self.name}, uid={self.uid})"
@@ -225,7 +227,7 @@ class Node:
             yield from child.postorder()
         yield self
 
-
+# isn't this the same function of parse cart in cart.py?
 def parse_rpart(
     nodes: list[dict], ylevels: list[str], xlevels: dict[str, list[str]], csplit: list[list]
 ) -> dict[int, CARTNode]:
@@ -311,6 +313,7 @@ def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata) -> Node:
         n.strata = node.strata
         n.cart = node
         n.cart.strata = strata
+        n.class_probabilities = node.class_probabilities
         nodes[i] = n
 
     for i, node in nodes.items():
