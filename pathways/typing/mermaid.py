@@ -70,7 +70,7 @@ def _link_label(node: Node) -> str:
     msg = f"Unsupported operator: {ope}"
     raise MermaidError(msg)
 
-
+# we need to update this diagram too
 def create_cart_diagram(root: Node) -> str:
     """Create mermaid diagram for CART."""
     header = "flowchart TD"
@@ -146,48 +146,57 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
 
     shapes_lst = []
     links = []
-    drawn_segment_nodes: set[str] = set()
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
-        shape_type = "circle" if node.name == "segment" else shapes[node.question.type]
-        shape_label = get_form_shape_label(node)
-        shape = draw_shape(node.uid, shape_label, shape_type)
-        shapes_lst.append(shape)
+
+        # Determine if we skip default shape drawing 
+        if node.name == "segment" and getattr(node, "class_probabilities", None):
+            draw_default_shape = False
+        else:
+            draw_default_shape = True
+
+        if draw_default_shape:
+            shape_type = "circle" if node.name == "segment" else shapes[node.question.type]
+            shape_label = get_form_shape_label(node)
+            shape = draw_shape(node.uid, shape_label, shape_type)
+            shapes_lst.append(shape)
 
         if node.is_root:
             continue
 
         link_label = get_form_link_label(node)
-        link = draw_link(
-            shape_a=node.parent.question.name, shape_b=node.question.name, label=link_label
-        )
+        link = draw_link(node.parent.question.name, node.question.name, link_label)
         links.append(link)
 
-        # for leaf nodes, draw arrows to all segments with prob > 0 ---
-        if node.name == "segment" and node.class_probabilities:
-            for segment_name, prob in node.class_probabilities.items():
-                if not prob or prob <= 0:
-                    continue
-                # ensure we have a shape for this segment "probability" node
-                if segment_name not in drawn_segment_nodes:
-                    segment_shape_type = shapes["segment"]
-                    segment_label = segment_name
-                    segment_shape = draw_shape(
-                        segment_name,  
-                        segment_label,
-                        segment_shape_type,
-                    )
-                    shapes_lst.append(segment_shape)
-                    drawn_segment_nodes.add(segment_name)
+        # NEW: stacked probability nodes
+        if node.name == "segment" and getattr(node, "class_probabilities", None):
+            items = [
+                (seg, prob)
+                for seg, prob in node.class_probabilities.items()
+                if prob and prob > 0
+            ]
+            if not items:
+                continue
+            items.sort(key=lambda x: x[1], reverse=True)
 
-                # link from this leaf node to the segment node, with probability as label
-                prob_label = f"{prob:.2f}"  # or f"{prob*100:.0f}%" if you prefer %
-                prob_link = draw_link(
-                    shape_a=node.uid,           # from this leaf node (UID matches shape created above)
-                    shape_b=segment_name,       # to the segment node
-                    label=prob_label,
-                )
-                links.append(prob_link)
+            # top row — overrides default shape
+            prev_id = node.uid
+            top_seg, top_prob = items[0]
+            top_label = f"{top_seg} ({top_prob*100:.0f}%)"
+            top_shape = draw_shape(prev_id, top_label, shapes["segment"])
+            shapes_lst.append(top_shape)
+
+            # remaining rows
+            for i, (seg, prob) in enumerate(items[1:], start=2):
+                new_id = f"{node.uid}_prob_{i}"
+                new_label = f"{seg} ({prob*100:.0f}%)"
+                new_shape = draw_shape(new_id, new_label, shapes["segment"])
+                shapes_lst.append(new_shape)
+
+                stacked_link = draw_link(prev_id, new_id)
+                links.append(stacked_link)
+
+                prev_id = new_id
 
     return "\n\t".join([header, *shapes_lst, *links])
