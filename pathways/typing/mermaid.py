@@ -70,23 +70,26 @@ def _link_label(node: Node) -> str:
     msg = f"Unsupported operator: {ope}"
     raise MermaidError(msg)
 
-# we need to update this diagram too
 def create_cart_diagram(root: Node) -> str:
     """Create mermaid diagram for CART."""
     header = "flowchart TD"
 
     shapes_lst = []
+    links = []
+    
     for node in root.preorder():
         if node.is_leaf:
-            label = node.cart.cluster
-            shape_type = "stadium"
+            probabilities = node.class_probabilities
+            prob_shapes, prob_links = create_segment_probability_stack(
+                node, probabilities, "stadium"
+            )
+            shapes_lst.extend(prob_shapes)
+            links.extend(prob_links)
         else:
             label = node.cart.left.var
-            shape_type = "rectangle"
-        shape = draw_shape(node.uid, label, shape_type)
-        shapes_lst.append(shape)
+            shape = draw_shape(node.uid, label, "rectangle")
+            shapes_lst.append(shape)
 
-    links = []
     for node in root.preorder():
         if node.is_root:
             continue
