@@ -70,13 +70,14 @@ def _link_label(node: Node) -> str:
     msg = f"Unsupported operator: {ope}"
     raise MermaidError(msg)
 
+
 def create_cart_diagram(root: Node) -> str:
     """Create mermaid diagram for CART."""
     header = "flowchart TD"
 
     shapes_lst = []
     links = []
-    
+
     for node in root.preorder():
         if node.is_leaf:
             probabilities = node.class_probabilities
@@ -90,7 +91,6 @@ def create_cart_diagram(root: Node) -> str:
             shape = draw_shape(node.uid, label, "rectangle")
             shapes_lst.append(shape)
 
-    for node in root.preorder():
         if node.is_root:
             continue
         link = draw_link(node.parent.uid, node.uid, _link_label(node))
@@ -131,13 +131,12 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
 
     return ""
 
+
 def create_segment_probability_stack(
-    node: Node, 
-    probabilities: dict[str, float], 
-    shape_type: str = "stadium"
+    node: Node, probabilities: dict[str, float], shape_type: str = "stadium"
 ) -> tuple[list[str], list[str]]:
     """Create stacked shapes and links for segment probabilities.
-    
+
     Returns:
         tuple: (list of shapes, list of links between shapes)
     """
@@ -147,26 +146,27 @@ def create_segment_probability_stack(
     if not items:
         return shapes, links
     items.sort(key=lambda x: x[1], reverse=True)
-    
+
     # Top row (highest probability)
     prev_id = node.uid
     top_seg, top_prob = items[0]
     top_label = f"{top_seg} ({top_prob * 100:.0f}%)"
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
-    
+
     # Remaining rows (lower probabilities)
     for i, (seg, prob) in enumerate(items[1:], start=2):
         new_id = f"{node.uid}_prob_{i}"
         new_label = f"{seg} ({prob * 100:.0f}%)"
         new_shape = draw_shape(new_id, new_label, shape_type)
         shapes.append(new_shape)
-        
+
         stacked_link = draw_link(prev_id, new_id)
         links.append(stacked_link)
         prev_id = new_id
-    
+
     return shapes, links
+
 
 def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     """Create mermaid diagram for typing form."""
@@ -188,22 +188,21 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
         if skip_notes and node.question.type == "note":
             continue
 
-        probabilities = getattr(node, "class_probabilities", None)
         is_segment_leaf = node.name == "Segment"
 
-        if not (is_segment_leaf and probabilities):
-            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
-            shape_label = get_form_shape_label(node)
-            shape = draw_shape(node.uid, shape_label, shape_type)
-            shapes_lst.append(shape)
-        else:
+        if is_segment_leaf:
+            probabilities = node.class_probabilities
             prob_shapes, prob_links = create_segment_probability_stack(
-                node, probabilities, shapes["segment"]
+                node, probabilities, "circle"
             )
             shapes_lst.extend(prob_shapes)
             links.extend(prob_links)
-            
-        # Links
+        else:
+            shape_type = shapes[node.question.type]
+            shape_label = get_form_shape_label(node)
+            shape = draw_shape(node.uid, shape_label, shape_type)
+            shapes_lst.append(shape)
+
         if node.is_root:
             continue
         link_label = get_form_link_label(node)
