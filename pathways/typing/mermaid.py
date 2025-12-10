@@ -188,7 +188,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
         if skip_notes and node.question.type == "note":
             continue
 
-        is_segment_leaf = node.name == "Segment"
+        is_segment_leaf = node.name == "segment"
 
         if is_segment_leaf:
             probabilities = node.class_probabilities
