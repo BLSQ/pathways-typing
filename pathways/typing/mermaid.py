@@ -19,7 +19,7 @@ ShapeType = Literal[
     "stadium",
     "hexagon",
     "parallelogram",
-    "prallelogram_alt",
+    "parallelogram_alt",
     "circle",
     "trapezoid",
     "trapezoid_alt",
@@ -79,13 +79,19 @@ def create_cart_diagram(root: Node) -> str:
     links = []
 
     for node in root.preorder():
-        if node.is_leaf:
-            probabilities = node.class_probabilities
+        probabilities = getattr(node, "class_probabilities", None)
+        
+        if node.is_leaf and probabilities:
             prob_shapes, prob_links = create_segment_probability_stack(
                 node, probabilities, "stadium"
             )
             shapes_lst.extend(prob_shapes)
             links.extend(prob_links)
+        elif node.is_leaf:
+            # Leaf without probabilities (fallback)
+            label = node.cart.cluster
+            shape = draw_shape(node.uid, label, "stadium")
+            shapes_lst.append(shape)
         else:
             label = node.cart.left.var
             shape = draw_shape(node.uid, label, "rectangle")
@@ -189,16 +195,16 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
             continue
 
         is_segment_leaf = node.name == "segment"
+        probabilities = getattr(node, "class_probabilities", None)
 
-        if is_segment_leaf:
-            probabilities = node.class_probabilities
+        if is_segment_leaf and probabilities:
             prob_shapes, prob_links = create_segment_probability_stack(
                 node, probabilities, "circle"
             )
             shapes_lst.extend(prob_shapes)
             links.extend(prob_links)
         else:
-            shape_type = shapes[node.question.type]
+            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
             shape_label = get_form_shape_label(node)
             shape = draw_shape(node.uid, shape_label, shape_type)
             shapes_lst.append(shape)
