@@ -130,8 +130,6 @@ def generate_uid(prefix: str) -> str:
     name = prefix.lower().replace(".", "_")
     return f"{name}_{suffix}"
 
-# This is where I need to change to update the tree structure for the form 
-# that the mermaid diagram will represent
 class Node:
     """A node in the typing tree."""
 
@@ -227,7 +225,7 @@ class Node:
             yield from child.postorder()
         yield self
 
-# isn't this the same function of parse cart in cart.py?
+
 def parse_rpart(
     nodes: list[dict], ylevels: list[str], xlevels: dict[str, list[str]], csplit: list[list]
 ) -> dict[int, CARTNode]:

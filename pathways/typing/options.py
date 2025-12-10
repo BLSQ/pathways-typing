@@ -243,9 +243,9 @@ def exit_deadends(
                     for choice in choices_config[var]:
                         if choice["target_value"] == cart_value:
                             deadend_choices_xlsform.append(choice["name"])
-                assert len(deadend_choices_xlsform) == len(
-                    deadend_choices
-                ), "Some deadend choices were not found in choices_config"
+                assert len(deadend_choices_xlsform) == len(deadend_choices), (
+                    "Some deadend choices were not found in choices_config"
+                )
                 deadend_choices = deadend_choices_xlsform
 
                 # Get segment name from cluster number
@@ -276,10 +276,7 @@ def exit_deadends(
                     for key, value in settings_config.items()
                     if key.startswith("segment_note")
                 }
-                label = {
-                    key: value.format(segment=segment)
-                    for key, value in note_label.items()
-                }
+                label = {key: value.format(segment=segment) for key, value in note_label.items()}
 
                 # create note for dead-end
                 deadend_label = {
@@ -292,9 +289,9 @@ def exit_deadends(
                     if key in deadend_label:
                         label[key] += deadend_label[key]
                     else:
-                         label[key] += (
-                        "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
-                    )
+                        label[key] += (
+                            "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
+                        )
 
                 note_node = Node(name="segment_note")
                 note = Question(name=note_node.uid, type="note", label=label)
@@ -303,5 +300,3 @@ def exit_deadends(
                 new_node.add_child(note_node)
 
     return new_root
-
-

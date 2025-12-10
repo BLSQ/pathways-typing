@@ -80,7 +80,7 @@ def create_cart_diagram(root: Node) -> str:
 
     for node in root.preorder():
         probabilities = getattr(node, "class_probabilities", None)
-        
+
         if node.is_leaf and probabilities:
             prob_shapes, prob_links = create_segment_probability_stack(
                 node, probabilities, "stadium"
