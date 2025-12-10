@@ -128,11 +128,46 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
 
     return ""
 
-# My changes need to go here for the mermaid diagram
+def create_segment_probability_stack(
+    node: Node, 
+    probabilities: dict[str, float], 
+    shape_type: str = "stadium"
+) -> tuple[list[str], list[str]]:
+    """Create stacked shapes and links for segment probabilities.
+    
+    Returns:
+        tuple: (list of shapes, list of links between shapes)
+    """
+    shapes = []
+    links = []
+    items = [(seg, p) for seg, p in probabilities.items() if p and p > 0]
+    if not items:
+        return shapes, links
+    items.sort(key=lambda x: x[1], reverse=True)
+    
+    # Top row (highest probability)
+    prev_id = node.uid
+    top_seg, top_prob = items[0]
+    top_label = f"{top_seg} ({top_prob * 100:.0f}%)"
+    top_shape = draw_shape(prev_id, top_label, shape_type)
+    shapes.append(top_shape)
+    
+    # Remaining rows (lower probabilities)
+    for i, (seg, prob) in enumerate(items[1:], start=2):
+        new_id = f"{node.uid}_prob_{i}"
+        new_label = f"{seg} ({prob * 100:.0f}%)"
+        new_shape = draw_shape(new_id, new_label, shape_type)
+        shapes.append(new_shape)
+        
+        stacked_link = draw_link(prev_id, new_id)
+        links.append(stacked_link)
+        prev_id = new_id
+    
+    return shapes, links
+
 def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     """Create mermaid diagram for typing form."""
     header = "flowchart TD"
-
     shapes = {
         "segment": "stadium",
         "select_one": "rectangle",
@@ -150,53 +185,26 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
         if skip_notes and node.question.type == "note":
             continue
 
-        # Determine if we skip default shape drawing 
-        if node.name == "segment" and getattr(node, "class_probabilities", None):
-            draw_default_shape = False
-        else:
-            draw_default_shape = True
+        probabilities = getattr(node, "class_probabilities", None)
+        is_segment_leaf = node.name == "Segment"
 
-        if draw_default_shape:
-            shape_type = "circle" if node.name == "segment" else shapes[node.question.type]
+        if not (is_segment_leaf and probabilities):
+            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
             shape_label = get_form_shape_label(node)
             shape = draw_shape(node.uid, shape_label, shape_type)
             shapes_lst.append(shape)
-
+        else:
+            prob_shapes, prob_links = create_segment_probability_stack(
+                node, probabilities, shapes["segment"]
+            )
+            shapes_lst.extend(prob_shapes)
+            links.extend(prob_links)
+            
+        # Links
         if node.is_root:
             continue
-
         link_label = get_form_link_label(node)
         link = draw_link(node.parent.question.name, node.question.name, link_label)
         links.append(link)
-
-        # NEW: stacked probability nodes
-        if node.name == "segment" and getattr(node, "class_probabilities", None):
-            items = [
-                (seg, prob)
-                for seg, prob in node.class_probabilities.items()
-                if prob and prob > 0
-            ]
-            if not items:
-                continue
-            items.sort(key=lambda x: x[1], reverse=True)
-
-            # top row — overrides default shape
-            prev_id = node.uid
-            top_seg, top_prob = items[0]
-            top_label = f"{top_seg} ({top_prob*100:.0f}%)"
-            top_shape = draw_shape(prev_id, top_label, shapes["segment"])
-            shapes_lst.append(top_shape)
-
-            # remaining rows
-            for i, (seg, prob) in enumerate(items[1:], start=2):
-                new_id = f"{node.uid}_prob_{i}"
-                new_label = f"{seg} ({prob*100:.0f}%)"
-                new_shape = draw_shape(new_id, new_label, shapes["segment"])
-                shapes_lst.append(new_shape)
-
-                stacked_link = draw_link(prev_id, new_id)
-                links.append(stacked_link)
-
-                prev_id = new_id
 
     return "\n\t".join([header, *shapes_lst, *links])
