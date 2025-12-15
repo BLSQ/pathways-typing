@@ -130,7 +130,6 @@ def generate_uid(prefix: str) -> str:
     name = prefix.lower().replace(".", "_")
     return f"{name}_{suffix}"
 
-
 class Node:
     """A node in the typing tree."""
 
@@ -148,6 +147,7 @@ class Node:
         self.question: Question | None = None
         self.uid: str = generate_uid(name)
         self.conditions: list[str] = []
+        self.class_probabilities: dict[str, float] | None = None
 
     def __repr__(self) -> str:
         return f"Node(name={self.name}, uid={self.uid})"
@@ -311,6 +311,7 @@ def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata) -> Node:
         n.strata = node.strata
         n.cart = node
         n.cart.strata = strata
+        n.class_probabilities = node.cluster_probabilities
         nodes[i] = n
 
     for i, node in nodes.items():

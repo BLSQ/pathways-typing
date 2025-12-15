@@ -19,7 +19,7 @@ ShapeType = Literal[
     "stadium",
     "hexagon",
     "parallelogram",
-    "prallelogram_alt",
+    "parallelogram_alt",
     "circle",
     "trapezoid",
     "trapezoid_alt",
@@ -76,18 +76,27 @@ def create_cart_diagram(root: Node) -> str:
     header = "flowchart TD"
 
     shapes_lst = []
+    links = []
+
     for node in root.preorder():
-        if node.is_leaf:
+        probabilities = getattr(node, "class_probabilities", None)
+
+        if node.is_leaf and probabilities:
+            prob_shapes, prob_links = create_segment_probability_stack(
+                node, probabilities, "stadium"
+            )
+            shapes_lst.extend(prob_shapes)
+            links.extend(prob_links)
+        elif node.is_leaf:
+            # Leaf without probabilities (fallback)
             label = node.cart.cluster
-            shape_type = "stadium"
+            shape = draw_shape(node.uid, label, "stadium")
+            shapes_lst.append(shape)
         else:
             label = node.cart.left.var
-            shape_type = "rectangle"
-        shape = draw_shape(node.uid, label, shape_type)
-        shapes_lst.append(shape)
+            shape = draw_shape(node.uid, label, "rectangle")
+            shapes_lst.append(shape)
 
-    links = []
-    for node in root.preorder():
         if node.is_root:
             continue
         link = draw_link(node.parent.uid, node.uid, _link_label(node))
@@ -129,10 +138,45 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     return ""
 
 
+def create_segment_probability_stack(
+    node: Node, probabilities: dict[str, float], shape_type: str = "stadium"
+) -> tuple[list[str], list[str]]:
+    """Create stacked shapes and links for segment probabilities.
+
+    Returns:
+        tuple: (list of shapes, list of links between shapes)
+    """
+    shapes = []
+    links = []
+    items = [(seg, p) for seg, p in probabilities.items() if p and p > 0]
+    if not items:
+        return shapes, links
+    items.sort(key=lambda x: x[1], reverse=True)
+
+    # Top row (highest probability)
+    prev_id = node.uid
+    top_seg, top_prob = items[0]
+    top_label = f"{top_seg} ({top_prob * 100:.0f}%)"
+    top_shape = draw_shape(prev_id, top_label, shape_type)
+    shapes.append(top_shape)
+
+    # Remaining rows (lower probabilities)
+    for i, (seg, prob) in enumerate(items[1:], start=2):
+        new_id = f"{node.uid}_prob_{i}"
+        new_label = f"{seg} ({prob * 100:.0f}%)"
+        new_shape = draw_shape(new_id, new_label, shape_type)
+        shapes.append(new_shape)
+
+        stacked_link = draw_link(prev_id, new_id)
+        links.append(stacked_link)
+        prev_id = new_id
+
+    return shapes, links
+
+
 def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     """Create mermaid diagram for typing form."""
     header = "flowchart TD"
-
     shapes = {
         "segment": "stadium",
         "select_one": "rectangle",
@@ -149,18 +193,26 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
-        shape_type = "circle" if node.name == "segment" else shapes[node.question.type]
-        shape_label = get_form_shape_label(node)
-        shape = draw_shape(node.uid, shape_label, shape_type)
-        shapes_lst.append(shape)
+
+        is_segment_leaf = node.name == "segment"
+        probabilities = getattr(node, "class_probabilities", None)
+
+        if is_segment_leaf and probabilities:
+            prob_shapes, prob_links = create_segment_probability_stack(
+                node, probabilities, "circle"
+            )
+            shapes_lst.extend(prob_shapes)
+            links.extend(prob_links)
+        else:
+            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
+            shape_label = get_form_shape_label(node)
+            shape = draw_shape(node.uid, shape_label, shape_type)
+            shapes_lst.append(shape)
 
         if node.is_root:
             continue
-
         link_label = get_form_link_label(node)
-        link = draw_link(
-            shape_a=node.parent.question.name, shape_b=node.question.name, label=link_label
-        )
+        link = draw_link(node.parent.question.name, node.question.name, link_label)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
