@@ -79,7 +79,7 @@ def create_cart_diagram(root: Node) -> str:
     links = []
 
     for node in root.preorder():
-        probabilities = getattr(node, "class_probabilities", None)
+        probabilities = node.class_probabilities
 
         if node.is_leaf and probabilities:
             prob_shapes, prob_links = create_segment_probability_stack(
@@ -195,7 +195,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
             continue
 
         is_segment_leaf = node.name == "segment"
-        probabilities = getattr(node, "class_probabilities", None)
+        probabilities = node.class_probabilities
 
         if is_segment_leaf and probabilities:
             prob_shapes, prob_links = create_segment_probability_stack(
