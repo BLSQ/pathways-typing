@@ -98,18 +98,38 @@ def add_segment_note(
 
 
 def add_segment_notes(
-    root: Node, settings_config: dict, segments_config: dict | None = None
+    root: Node,
+    settings_config: dict,
+    segments_config: dict | None = None,
+    confidence_threshold: float | None = None,
 ) -> Node:
-    """Add notes once segments are assigned."""
+    """Add notes once segments are assigned.
+
+    If confidence_threshold is provided (0.0-1.0), calculate the max probability. If max_probability < threshold,
+    dead-end note will be applied. Otherwise, the segment note is applied.
+    """
     new_root = copy.deepcopy(root)
     note_label = {
         key.replace("segment_note", "label"): value
         for key, value in settings_config.items()
         if key.startswith("segment_note")
     }
+    low_conf_label = {
+        key.replace("deadend_note", "label"): value
+        for key, value in settings_config.items()
+        if key.startswith("deadend_note")
+    }
     for node in new_root.preorder():
         if node.is_leaf and node.name == "segment":
-            add_segment_note(node, note_label, segments_config)
+            use_low_conf = False
+            if confidence_threshold is not None and node.class_probabilities:
+                max_prob = max(node.class_probabilities.values())
+                use_low_conf = max_prob < confidence_threshold
+
+            if use_low_conf and low_conf_label:
+                add_segment_note(node, low_conf_label, segments_config)
+            else:
+                add_segment_note(node, note_label, segments_config)
     return new_root
 
 
