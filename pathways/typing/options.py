@@ -108,6 +108,7 @@ def add_segment_notes(
     If confidence_threshold is provided (0.0-1.0), calculate the max probability. If max_probability < threshold,
     dead-end note will be applied. Otherwise, the segment note is applied.
     """
+    low_confidence_threshold = low_confidence_threshold / 100
     new_root = copy.deepcopy(root)
     note_label = {
         key.replace("segment_note", "label"): value
