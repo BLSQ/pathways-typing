@@ -129,6 +129,7 @@ def add_segment_notes(
             print("low_conf_label:", low_conf_label)
             use_low_conf = False
             if low_confidence_threshold is not None and node.class_probabilities:
+                low_confidence_threshold = low_confidence_threshold / 100.0
                 max_prob = max(node.class_probabilities.values())
                 print("max_prob:", max_prob, "  type:", type(max_prob))
                 try:
