@@ -127,15 +127,19 @@ def add_segment_notes(
             if low_confidence_threshold is not None and node.class_probabilities:
                 max_prob = max(node.class_probabilities.values())
                 use_low_conf = max_prob < low_confidence_threshold
-            if use_low_conf and low_conf_label:
-                # Combine segment note with low confidence note
-                combined_label = {**note_label, **low_conf_label}
-                add_segment_note(node, combined_label, segments_config)
-            else:
-                add_segment_note(node, note_label, segments_config)
+            final_label = note_label.copy()
+            if use_low_conf:
+                for key, seg_note in final_label.items():
+                    low_conf_note = low_conf_label.get(
+                        key,
+                        "\n[Low segment assignment confidence]\n"
+                        "We recommend stopping this survey and starting with a new respondent."
+                    )
+                    final_label[key] = seg_note + low_conf_note
+
+            add_segment_note(node, final_label, segments_config)
 
     return new_root
-
 
 def enforce_relevance(root: Node) -> Node:
     """Enforce relevance rules for the node.
