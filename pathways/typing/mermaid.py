@@ -174,9 +174,10 @@ def create_segment_probability_stack(
     return shapes, links
 
 
-def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
+def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float) -> str:
     """Create mermaid diagram for typing form."""
     header = "flowchart TD"
+    threshold = threshold / 100.0
     shapes = {
         "segment": "stadium",
         "select_one": "rectangle",
@@ -198,11 +199,17 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False) -> str:
         probabilities = node.class_probabilities
 
         if is_segment_leaf and probabilities:
-            prob_shapes, prob_links = create_segment_probability_stack(
-                node, probabilities, "circle"
-            )
-            shapes_lst.extend(prob_shapes)
-            links.extend(prob_links)
+            max_prob = max(probabilities.values())
+            if max_prob < threshold:
+                prob_shapes, prob_links = create_segment_probability_stack(
+                    node, probabilities, "circle"
+                )
+                shapes_lst.extend(prob_shapes)
+                links.extend(prob_links)
+            else:
+                shape_label = get_form_shape_label(node)
+                shape = draw_shape(node.uid, shape_label, "circle")
+                shapes_lst.append(shape)
         else:
             shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
             shape_label = get_form_shape_label(node)
