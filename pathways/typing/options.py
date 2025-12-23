@@ -120,29 +120,18 @@ def add_segment_notes(
         for key, value in settings_config.items()
         if key.startswith("deadend_note")
     }
+    
     for node in new_root.preorder():
-        # --- DEBUG ROOT: loop reaches here ---
-        print("\nVisiting node:", node)
         if node.is_leaf and node.name == "segment":
-            print(" -> Segment leaf detected")
-            print("class_probabilities:", node.class_probabilities)
-            print("threshold:", low_confidence_threshold)
-            print("low_conf_label:", low_conf_label)
             use_low_conf = False
             if low_confidence_threshold is not None and node.class_probabilities:
                 max_prob = max(node.class_probabilities.values())
-                print("max_prob:", max_prob, "  type:", type(max_prob))
-                try:
-                    print("comparison result:", max_prob < low_confidence_threshold)
-                except Exception as e:
-                    print("comparison error:", e)
                 use_low_conf = max_prob < low_confidence_threshold
-            print("use_low_conf final =", use_low_conf)
             if use_low_conf and low_conf_label:
-                print(" *** APPLYING LOW CONF NOTE ***")
-                add_segment_note(node, low_conf_label, segments_config)
+                # Combine segment note with low confidence note
+                combined_label = {**note_label, **low_conf_label}
+                add_segment_note(node, combined_label, segments_config)
             else:
-                print(" --- applying normal note ---")
                 add_segment_note(node, note_label, segments_config)
 
     return new_root
