@@ -111,12 +111,12 @@ def add_segment_notes(
     low_confidence_threshold = low_confidence_threshold / 100
     new_root = copy.deepcopy(root)
     note_label = {
-        key.replace("segment_note", "label"): value
+        key.replace("segment_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
         for key, value in settings_config.items()
         if key.startswith("segment_note")
     }
     low_conf_label = {
-        key.replace("deadend_note", "label"): value
+        key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
         for key, value in settings_config.items()
         if key.startswith("deadend_note")
     }
@@ -308,7 +308,7 @@ def exit_deadends(
 
                 # create note for dead-end
                 deadend_label = {
-                    key.replace("deadend_note", "label"): value
+                    key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
                     for key, value in settings_config.items()
                     if key.startswith("deadend_note")
                 }
