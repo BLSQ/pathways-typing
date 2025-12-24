@@ -174,7 +174,7 @@ def create_segment_probability_stack(
     return shapes, links
 
 
-def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float) -> str:
+def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
     """Create mermaid diagram for typing form."""
     header = "flowchart TD"
     threshold = threshold / 100.0

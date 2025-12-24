@@ -101,7 +101,7 @@ def add_segment_notes(
     root: Node,
     settings_config: dict,
     segments_config: dict | None = None,
-    low_confidence_threshold: float | None = None,
+    low_confidence_threshold: float = 0.0,
 ) -> Node:
     """Add notes once segments are assigned.
 
@@ -124,7 +124,7 @@ def add_segment_notes(
     for node in new_root.preorder():
         if node.is_leaf and node.name == "segment":
             use_low_conf = False
-            if low_confidence_threshold is not None and node.class_probabilities:
+            if low_confidence_threshold > 0 and node.class_probabilities:
                 max_prob = max(node.class_probabilities.values())
                 use_low_conf = max_prob < low_confidence_threshold
             final_label = note_label.copy()
