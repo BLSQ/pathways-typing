@@ -98,20 +98,48 @@ def add_segment_note(
 
 
 def add_segment_notes(
-    root: Node, settings_config: dict, segments_config: dict | None = None
+    root: Node,
+    settings_config: dict,
+    segments_config: dict | None = None,
+    low_confidence_threshold: float = 0.0,
 ) -> Node:
-    """Add notes once segments are assigned."""
+    """Add notes once segments are assigned.
+
+    If confidence_threshold is provided (percentage), calculate max probability. If max_probability < threshold,
+    segment + dead-end note will be applied. Otherwise, only segment note is applied.
+    """
+    low_confidence_threshold = low_confidence_threshold / 100
     new_root = copy.deepcopy(root)
     note_label = {
-        key.replace("segment_note", "label"): value
+        key.replace("segment_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
         for key, value in settings_config.items()
         if key.startswith("segment_note")
     }
+    low_conf_label = {
+        key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+        for key, value in settings_config.items()
+        if key.startswith("deadend_note")
+    }
+    
     for node in new_root.preorder():
         if node.is_leaf and node.name == "segment":
-            add_segment_note(node, note_label, segments_config)
-    return new_root
+            use_low_conf = False
+            if low_confidence_threshold > 0 and node.class_probabilities:
+                max_prob = max(node.class_probabilities.values())
+                use_low_conf = max_prob < low_confidence_threshold
+            final_label = note_label.copy()
+            if use_low_conf:
+                for key, seg_note in final_label.items():
+                    low_conf_note = low_conf_label.get(
+                        key,
+                        "\n[Low segment assignment confidence]\n"
+                        "We recommend stopping this survey and starting with a new respondent."
+                    )
+                    final_label[key] = seg_note + low_conf_note
 
+            add_segment_note(node, final_label, segments_config)
+
+    return new_root
 
 def enforce_relevance(root: Node) -> Node:
     """Enforce relevance rules for the node.
@@ -280,7 +308,7 @@ def exit_deadends(
 
                 # create note for dead-end
                 deadend_label = {
-                    key.replace("deadend_note", "label"): value
+                    key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
                     for key, value in settings_config.items()
                     if key.startswith("deadend_note")
                 }
