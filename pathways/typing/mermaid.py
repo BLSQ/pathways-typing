@@ -202,7 +202,7 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: floa
             max_prob = max(probabilities.values())
             shape_label = get_form_shape_label(node)
             if max_prob < threshold:
-                shape_label = f"(*) {shape_label}"  
+                shape_label = f"* {shape_label}"  
             shape = draw_shape(node.uid, shape_label, "circle")
             shapes_lst.append(shape)
         else:
