@@ -26,6 +26,17 @@ ShapeType = Literal[
     "rhombus",
 ]
 
+FORM_SHAPE_TYPES = {
+    "segment": "stadium",
+    "select_one": "rectangle",
+    "select_multiple": "rectangle",
+    "calculate": "parallelogram",
+    "integer": "trapezoid",
+    "decimal": "trapezoid_alt",
+    "text": "circle",
+    "note": "parallelogram_alt",
+}
+
 
 def clean_label(label: str) -> str:
     """Clean label string to not break whimsical import."""
@@ -153,6 +164,7 @@ def create_segment_probability_stack(
         return shapes, links
     items.sort(key=lambda x: x[1], reverse=True)
 
+    # Top row (highest probability)
     prefix = "* " if low_confidence else ""
     prev_id = node.uid
     top_seg, top_prob = items[0]
@@ -160,6 +172,7 @@ def create_segment_probability_stack(
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
 
+    # Remaining rows (lower probabilities)
     for i, (seg, prob) in enumerate(items[1:], start=2):
         new_id = f"{node.uid}_prob_{i}"
         new_label = f"{prefix}{seg} ({prob * 100:.0f}%)"
@@ -176,17 +189,6 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
     """Create simple mermaid diagram for typing form."""
     header = "flowchart TD"
     threshold = threshold / 100.0
-    shapes = {
-        "segment": "stadium",
-        "select_one": "rectangle",
-        "select_multiple": "rectangle",
-        "calculate": "parallelogram",
-        "integer": "trapezoid",
-        "decimal": "trapezoid_alt",
-        "text": "circle",
-        "note": "parallelogram_alt",
-    }
-
     shapes_lst = []
     links = []
     for node in root.preorder():
@@ -204,7 +206,7 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
             shape = draw_shape(node.uid, shape_label, "circle")
             shapes_lst.append(shape)
         else:
-            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
+            shape_type = "circle" if is_segment_leaf else FORM_SHAPE_TYPES[node.question.type]
             shape_label = get_form_shape_label(node)
             shape = draw_shape(node.uid, shape_label, shape_type)
             shapes_lst.append(shape)
@@ -222,17 +224,6 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
     """Create detailed mermaid diagram with stacked probabilities for typing form."""
     header = "flowchart TD"
     threshold = threshold / 100.0
-    shapes = {
-        "segment": "stadium",
-        "select_one": "rectangle",
-        "select_multiple": "rectangle",
-        "calculate": "parallelogram",
-        "integer": "trapezoid",
-        "decimal": "trapezoid_alt",
-        "text": "circle",
-        "note": "parallelogram_alt",
-    }
-
     shapes_lst = []
     links = []
     for node in root.preorder():
@@ -250,7 +241,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
             shapes_lst.extend(prob_shapes)
             links.extend(prob_links)
         else:
-            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
+            shape_type = "circle" if is_segment_leaf else FORM_SHAPE_TYPES[node.question.type]
             shape_label = get_form_shape_label(node)
             shape = draw_shape(node.uid, shape_label, shape_type)
             shapes_lst.append(shape)
