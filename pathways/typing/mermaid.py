@@ -159,7 +159,7 @@ def create_segment_probability_stack(
     items.sort(key=lambda x: x[1], reverse=True)
 
     # Top row (highest probability)
-    prefix = "<b>*</b>" if low_confidence else ""
+    prefix = "*" if low_confidence else ""
     prev_id = node.uid
     top_seg, top_prob = items[0]
     top_label = f"{prefix}{top_seg} ({top_prob * 100:.0f}%)"
@@ -199,7 +199,7 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
 
             shape_label = get_form_shape_label(node)
             if is_low_confidence:
-                shape_label = f"<b>*</b>{shape_label}"  
+                shape_label = f"*{shape_label}"  
             shape = draw_shape(node.uid, shape_label, "circle")
             shapes_lst.append(shape)
         else:
