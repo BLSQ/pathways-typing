@@ -116,9 +116,9 @@ def add_segment_notes(
         if key.startswith("segment_note")
     }
     low_conf_label = {
-        key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+        key.replace("low_confidence_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
         for key, value in settings_config.items()
-        if key.startswith("deadend_note")
+        if key.startswith("low_confidence_note")
     }
     
     for node in new_root.preorder():
@@ -306,16 +306,16 @@ def exit_deadends(
                 }
                 label = {key: value.format(segment=segment) for key, value in note_label.items()}
 
-                # create note for dead-end
-                deadend_label = {
-                    key.replace("deadend_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+                # create note for low confidence
+                low_confidence_label = {
+                    key.replace("low_confidence_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
                     for key, value in settings_config.items()
-                    if key.startswith("deadend_note")
+                    if key.startswith("low_confidence_note")
                 }
 
                 for key in label:
-                    if key in deadend_label:
-                        label[key] += deadend_label[key]
+                    if key in low_confidence_label:
+                        label[key] += low_confidence_label[key]
                     else:
                         label[key] += (
                             "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
