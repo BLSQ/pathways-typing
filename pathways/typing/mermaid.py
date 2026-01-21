@@ -61,7 +61,7 @@ def draw_shape(shape_id: str, label: str, shape_type: ShapeType = "rectangle") -
     return f"{shape_id}{begin}{label}{end}"
 
 def draw_link(shape_a: str, shape_b: str, label: str | None = None, *, dotted: bool = False) -> str:
-    """Print mermaid link between two shapes."""
+    """Print mermaid link between two shapes. Either a straight or dotted link"""
     arrow_style = "-.->" if dotted else "-->"
     if label:
         label = clean_label(label)
@@ -146,10 +146,17 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
 def create_segment_probability_stack(
     node: Node, probabilities: dict[str, float], shape_type: str = "stadium", *, low_confidence: bool = False
 ) -> tuple[list[str], list[str]]:
-    """Create stacked shapes and links for segment probabilities.
+    """
+    Create stacked shapes and links for segment probabilities.
+
+    Args:
+        node (Node): The node representing the segment.
+        probabilities (dict[str, float]): Probabilities for each segment.
+        shape_type (str): The shape type to use for the stack (default: "stadium").
+        low_confidence (bool): If True, marks shapes/links as low confidence (default: False).
 
     Returns:
-        tuple: (list of shapes, list of links between shapes)
+        tuple[list[str], list[str]]: (list of shape strings, list of link strings)
     """
     shapes = []
     links = []
@@ -180,7 +187,17 @@ def create_segment_probability_stack(
     return shapes, links
 
 def create_default_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
-    """Create simple mermaid diagram for typing form."""
+    """
+    Create a simple mermaid diagram for a typing form tree.
+
+    Args:
+        root (Node): The root node of the form tree.
+        skip_notes (bool): If True, skip nodes of type "note" (default: False).
+        threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
+
+    Returns:
+        str: Mermaid diagram as a string.
+    """
     header = "flowchart TD"
     threshold = threshold / 100.0
     shapes_lst = []
@@ -219,7 +236,17 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
 
 
 def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
-    """Create detailed mermaid diagram with stacked probabilities for typing form."""
+    """
+    Create a detailed mermaid diagram with stacked probabilities for a typing form tree.
+
+    Args:
+        root (Node): The root node of the form tree.
+        skip_notes (bool): If True, skip nodes of type "note" (default: False).
+        threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
+
+    Returns:
+        str: Mermaid diagram as a string.
+    """
     header = "flowchart TD"
     threshold = threshold / 100.0
     shapes_lst = []
