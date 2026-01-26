@@ -26,13 +26,22 @@ ShapeType = Literal[
     "rhombus",
 ]
 
+FORM_SHAPE_TYPES = {
+    "segment": "stadium",
+    "select_one": "rectangle",
+    "select_multiple": "rectangle",
+    "calculate": "parallelogram",
+    "integer": "trapezoid",
+    "decimal": "trapezoid_alt",
+    "text": "circle",
+    "note": "parallelogram_alt",
+}
 
 def clean_label(label: str) -> str:
     """Clean label string to not break whimsical import."""
     for char in ["(", ")", "[", "]"]:
         label = label.replace(char, " ")
     return label.replace("\n", "\\n")
-
 
 def draw_shape(shape_id: str, label: str, shape_type: ShapeType = "rectangle") -> str:
     """Print mermaid shape."""
@@ -51,14 +60,13 @@ def draw_shape(shape_id: str, label: str, shape_type: ShapeType = "rectangle") -
     label = clean_label(label)
     return f"{shape_id}{begin}{label}{end}"
 
-
-def draw_link(shape_a: str, shape_b: str, label: str | None = None) -> str:
-    """Print mermaid link between two shapes."""
+def draw_link(shape_a: str, shape_b: str, label: str | None = None, *, dotted: bool = False) -> str:
+    """Print mermaid link between two shapes. Either a straight or dotted link"""
+    arrow_style = "-.->" if dotted else "-->"
     if label:
         label = clean_label(label)
-        return f"{shape_a} -->|{label}| {shape_b}"
-    return f"{shape_a} --> {shape_b}"
-
+        return f"{shape_a} {arrow_style}|{label}| {shape_b}"
+    return f"{shape_a} {arrow_style} {shape_b}"
 
 def _link_label(node: Node) -> str:
     ope = node.cart_rule.operator
@@ -69,7 +77,6 @@ def _link_label(node: Node) -> str:
         return f"{ope} {value}"
     msg = f"Unsupported operator: {ope}"
     raise MermaidError(msg)
-
 
 def create_cart_diagram(root: Node) -> str:
     """Create mermaid diagram for CART."""
@@ -114,7 +121,6 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
         return label
     return node.name
 
-
 def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     """Get label for form link between current node and its parent."""
     if node.question.choices_from_parent:
@@ -137,14 +143,20 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
 
     return ""
 
-
 def create_segment_probability_stack(
-    node: Node, probabilities: dict[str, float], shape_type: str = "stadium"
+    node: Node, probabilities: dict[str, float], shape_type: str = "stadium", *, low_confidence: bool = False
 ) -> tuple[list[str], list[str]]:
-    """Create stacked shapes and links for segment probabilities.
+    """
+    Create stacked shapes and links for segment probabilities.
+
+    Args:
+        node (Node): The node representing the segment.
+        probabilities (dict[str, float]): Probabilities for each segment.
+        shape_type (str): The shape type to use for the stack (default: "stadium").
+        low_confidence (bool): If True, marks shapes/links as low confidence (default: False).
 
     Returns:
-        tuple: (list of shapes, list of links between shapes)
+        tuple[list[str], list[str]]: (list of shape strings, list of link strings)
     """
     shapes = []
     links = []
@@ -154,41 +166,40 @@ def create_segment_probability_stack(
     items.sort(key=lambda x: x[1], reverse=True)
 
     # Top row (highest probability)
+    prefix = "*" if low_confidence else ""
     prev_id = node.uid
     top_seg, top_prob = items[0]
-    top_label = f"{top_seg} ({top_prob * 100:.0f}%)"
+    top_label = f"{prefix}{top_seg} ({top_prob * 100:.0f}%)"
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
 
     # Remaining rows (lower probabilities)
     for i, (seg, prob) in enumerate(items[1:], start=2):
         new_id = f"{node.uid}_prob_{i}"
-        new_label = f"{seg} ({prob * 100:.0f}%)"
+        new_label = f"{prefix}{seg} ({prob * 100:.0f}%)"
         new_shape = draw_shape(new_id, new_label, shape_type)
         shapes.append(new_shape)
 
-        stacked_link = draw_link(prev_id, new_id)
+        stacked_link = draw_link(prev_id, new_id, dotted=low_confidence)
         links.append(stacked_link)
         prev_id = new_id
 
     return shapes, links
 
+def create_default_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
+    """
+    Create a simple mermaid diagram for a typing form tree.
 
-def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
-    """Create mermaid diagram for typing form."""
+    Args:
+        root (Node): The root node of the form tree.
+        skip_notes (bool): If True, skip nodes of type "note" (default: False).
+        threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
+
+    Returns:
+        str: Mermaid diagram as a string.
+    """
     header = "flowchart TD"
     threshold = threshold / 100.0
-    shapes = {
-        "segment": "stadium",
-        "select_one": "rectangle",
-        "select_multiple": "rectangle",
-        "calculate": "parallelogram",
-        "integer": "trapezoid",
-        "decimal": "trapezoid_alt",
-        "text": "circle",
-        "note": "parallelogram_alt",
-    }
-
     shapes_lst = []
     links = []
     for node in root.preorder():
@@ -197,29 +208,77 @@ def create_form_diagram(root: Node, *, skip_notes: bool = False, threshold: floa
 
         is_segment_leaf = node.name == "segment"
         probabilities = node.class_probabilities
-
+        is_low_confidence = False
+        
         if is_segment_leaf and probabilities:
             max_prob = max(probabilities.values())
-            if max_prob < threshold:
-                prob_shapes, prob_links = create_segment_probability_stack(
-                    node, probabilities, "circle"
-                )
-                shapes_lst.extend(prob_shapes)
-                links.extend(prob_links)
-            else:
-                shape_label = get_form_shape_label(node)
-                shape = draw_shape(node.uid, shape_label, "circle")
-                shapes_lst.append(shape)
+            is_low_confidence = max_prob < threshold
+
+            shape_label = get_form_shape_label(node)
+            if is_low_confidence:
+                shape_label = f"*{shape_label}"  
+            shape = draw_shape(node.uid, shape_label, "circle")
+            shapes_lst.append(shape)
         else:
-            shape_type = "circle" if is_segment_leaf else shapes[node.question.type]
+            shape_type = "circle" if is_segment_leaf else FORM_SHAPE_TYPES[node.question.type]
             shape_label = get_form_shape_label(node)
             shape = draw_shape(node.uid, shape_label, shape_type)
             shapes_lst.append(shape)
 
         if node.is_root:
             continue
+
         link_label = get_form_link_label(node)
-        link = draw_link(node.parent.question.name, node.question.name, link_label)
+        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
+        links.append(link)
+
+    return "\n\t".join([header, *shapes_lst, *links])
+
+
+def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
+    """
+    Create a detailed mermaid diagram with stacked probabilities for a typing form tree.
+
+    Args:
+        root (Node): The root node of the form tree.
+        skip_notes (bool): If True, skip nodes of type "note" (default: False).
+        threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
+
+    Returns:
+        str: Mermaid diagram as a string.
+    """
+    header = "flowchart TD"
+    threshold = threshold / 100.0
+    shapes_lst = []
+    links = []
+    for node in root.preorder():
+        if skip_notes and node.question.type == "note":
+            continue
+
+        is_segment_leaf = node.name == "segment"
+        probabilities = node.class_probabilities
+        is_low_confidence = False
+        
+        if is_segment_leaf and probabilities:
+            max_prob = max(probabilities.values())
+            is_low_confidence = max_prob < threshold
+
+            prob_shapes, prob_links = create_segment_probability_stack(
+                node, probabilities, "circle", low_confidence=is_low_confidence
+            )
+            shapes_lst.extend(prob_shapes)
+            links.extend(prob_links)
+        else:
+            shape_type = "circle" if is_segment_leaf else FORM_SHAPE_TYPES[node.question.type]
+            shape_label = get_form_shape_label(node)
+            shape = draw_shape(node.uid, shape_label, shape_type)
+            shapes_lst.append(shape)
+
+        if node.is_root:
+            continue
+
+        link_label = get_form_link_label(node)
+        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
