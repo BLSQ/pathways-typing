@@ -130,6 +130,7 @@ def generate_uid(prefix: str) -> str:
     name = prefix.lower().replace(".", "_")
     return f"{name}_{suffix}"
 
+
 class Node:
     """A node in the typing tree."""
 
@@ -287,7 +288,7 @@ def parse_rpart(
     return cart_nodes
 
 
-def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata) -> Node:
+def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata | None = None) -> Node:
     """Build typing tree from CART nodes.
 
     We rely on the node binary index from the rpart output to build the tree.
@@ -296,8 +297,8 @@ def build_tree(cart_nodes: dict[int, CARTNode], strata: Strata) -> Node:
     ----------
     cart_nodes : dict[int, CARTNode]
         A dict containing all CART nodes, with node binary index as key
-    strata : Strata
-        Strata name ("rural" or "urban")
+    strata : Strata | None
+        Strata name ("rural" or "urban"), None for single CART
 
     Returns
     -------
@@ -368,11 +369,10 @@ def create_segment_question(node: Node, segments_config: dict | None = None) -> 
     node is reached.
     """
     segment = node.cart.cluster
-
-    mapping = segments_config.get(node.cart.strata) if segments_config else None
+    strata = node.cart.strata if node.cart.strata else "any"
+    mapping = segments_config.get(strata) if segments_config else None
     if mapping and segment in mapping:
         segment = mapping[segment]
-
     return Question(name=node.uid, type="calculate", required=True, calculation=f"'{segment}'")
 
 
