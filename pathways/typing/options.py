@@ -84,7 +84,8 @@ def add_segment_note(
 ) -> None:
     """Add note once segment is assigned."""
     segment = str(node.cart.cluster)
-    mapping = segments_config.get(node.cart.strata) if segments_config else None
+    strata = node.cart.strata if node.cart.strata else "any"
+    mapping = segments_config.get(strata) if segments_config else None
     if mapping and segment in mapping:
         segment = mapping[segment]
     label = {key: value.format(segment=segment) for key, value in note_label.items()}
@@ -111,16 +112,20 @@ def add_segment_notes(
     low_confidence_threshold = low_confidence_threshold / 100
     new_root = copy.deepcopy(root)
     note_label = {
-        key.replace("segment_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+        key.replace("segment_note", "label"): value.replace("\\n", "\n")
+        if isinstance(value, str)
+        else value
         for key, value in settings_config.items()
         if key.startswith("segment_note")
     }
     low_conf_label = {
-        key.replace("low_confidence_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+        key.replace("low_confidence_note", "label"): value.replace("\\n", "\n")
+        if isinstance(value, str)
+        else value
         for key, value in settings_config.items()
         if key.startswith("low_confidence_note")
     }
-    
+
     for node in new_root.preorder():
         if node.is_leaf and node.name == "segment":
             use_low_conf = False
@@ -133,13 +138,14 @@ def add_segment_notes(
                     low_conf_note = low_conf_label.get(
                         key,
                         "\n[Low segment assignment confidence]\n"
-                        "We recommend stopping this survey and starting with a new respondent."
+                        "We recommend stopping this survey and starting with a new respondent.",
                     )
                     final_label[key] = seg_note + low_conf_note
 
             add_segment_note(node, final_label, segments_config)
 
     return new_root
+
 
 def enforce_relevance(root: Node) -> Node:
     """Enforce relevance rules for the node.
@@ -278,7 +284,8 @@ def exit_deadends(
 
                 # Get segment name from cluster number
                 segment = str(node.cart.cluster)
-                mapping = segments_config.get(node.cart.strata) if segments_config else None
+                strata = node.cart.strata if node.cart.strata else "any"
+                mapping = segments_config.get(strata) if segments_config else None
                 if mapping and segment in mapping:
                     segment = mapping[segment]
 
@@ -308,7 +315,9 @@ def exit_deadends(
 
                 # create note for low confidence
                 low_confidence_label = {
-                    key.replace("low_confidence_note", "label"): value.replace("\\n", "\n") if isinstance(value, str) else value
+                    key.replace("low_confidence_note", "label"): value.replace("\\n", "\n")
+                    if isinstance(value, str)
+                    else value
                     for key, value in settings_config.items()
                     if key.startswith("low_confidence_note")
                 }
