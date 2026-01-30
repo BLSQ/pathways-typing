@@ -1,3 +1,4 @@
+
 """Generate mermaid diagrams from typing tree data structures.
 
 See <https://mermaid.js.org/> for more information about the Mermaid language.
@@ -78,6 +79,14 @@ def _link_label(node: Node) -> str:
     msg = f"Unsupported operator: {ope}"
     raise MermaidError(msg)
 
+def build_cluster_to_node_mapping(root: Node) -> dict[str, Node]:
+    """Build a mapping from cluster name to Node."""
+    mapping = {}
+    for node in root.preorder():
+        if hasattr(node, "cart") and hasattr(node.cart, "cluster"):
+            mapping[node.cart.cluster] = node
+    return mapping
+
 def create_cart_diagram(root: Node) -> str:
     """Create mermaid diagram for CART."""
     header = "flowchart TD"
@@ -144,7 +153,13 @@ def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     return ""
 
 def create_segment_probability_stack(
-    node: Node, probabilities: dict[str, float], shape_type: str = "stadium", *, low_confidence: bool = False
+    node: Node,
+    probabilities: dict[str, float],
+    shape_type: str = "stadium",
+    *,
+    low_confidence: bool = False,
+    cluster_to_node: dict[str, Node] = None,
+    language: str = "English (en)"
 ) -> tuple[list[str], list[str]]:
     """
     Create stacked shapes and links for segment probabilities.
@@ -154,6 +169,8 @@ def create_segment_probability_stack(
         probabilities (dict[str, float]): Probabilities for each segment.
         shape_type (str): The shape type to use for the stack (default: "stadium").
         low_confidence (bool): If True, marks shapes/links as low confidence (default: False).
+
+        cluster_to_segment (dict): Mapping from cluster name to segment name.
 
     Returns:
         tuple[list[str], list[str]]: (list of shape strings, list of link strings)
@@ -169,14 +186,22 @@ def create_segment_probability_stack(
     prefix = "*" if low_confidence else ""
     prev_id = node.uid
     top_seg, top_prob = items[0]
-    top_label = f"{prefix}{top_seg} ({top_prob * 100:.0f}%)"
+    if cluster_to_node and top_seg in cluster_to_node:
+        segment_label = get_form_shape_label(cluster_to_node[top_seg], language)
+    else:
+        segment_label = top_seg
+    top_label = f"{prefix}{segment_label} ({top_prob * 100:.0f}%)"
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
 
     # Remaining rows (lower probabilities)
     for i, (seg, prob) in enumerate(items[1:], start=2):
         new_id = f"{node.uid}_prob_{i}"
-        new_label = f"{prefix}{seg} ({prob * 100:.0f}%)"
+        if cluster_to_node and seg in cluster_to_node:
+            segment_label = get_form_shape_label(cluster_to_node[seg], language)
+        else:
+            segment_label = seg
+        new_label = f"{prefix}{segment_label} ({prob * 100:.0f}%)"
         new_shape = draw_shape(new_id, new_label, shape_type)
         shapes.append(new_shape)
 
@@ -251,6 +276,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
     threshold = threshold / 100.0
     shapes_lst = []
     links = []
+    cluster_to_node = build_cluster_to_node_mapping(root)
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
@@ -264,7 +290,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
             is_low_confidence = max_prob < threshold
 
             prob_shapes, prob_links = create_segment_probability_stack(
-                node, probabilities, "circle", low_confidence=is_low_confidence
+                node, probabilities, "circle", low_confidence=is_low_confidence, cluster_to_node=cluster_to_node
             )
             shapes_lst.extend(prob_shapes)
             links.extend(prob_links)
