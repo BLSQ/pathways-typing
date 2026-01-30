@@ -83,7 +83,8 @@ def build_cluster_to_node_mapping(root: Node) -> dict[str, Node]:
     """Build a mapping from cluster name to Node."""
     mapping = {}
     for node in root.preorder():
-        mapping[node.cart.cluster] = node
+        if hasattr(node, "cart") and hasattr(node.cart, "cluster"):
+            mapping[node.cart.cluster] = node
     return mapping
 
 def create_cart_diagram(root: Node) -> str:
