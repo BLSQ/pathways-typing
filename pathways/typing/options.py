@@ -194,6 +194,23 @@ def enforce_relevance(root: Node) -> Node:
     return new_root
 
 
+def add_triggers_for_select_multiple(root: Node) -> None:
+    """Add triggers to calculate fields that depend on select_multiple questions.
+
+    This helps Enketo re-evaluate dependent fields when select_multiple values change.
+    """
+    for node in root.preorder():
+        if node.question.type == "calculate":
+            # Walk up the tree to find if there's a select_multiple ancestor
+            current = node.parent
+            while current and not current.is_root:
+                if current.question.type == "select_multiple":
+                    # Set trigger to the select_multiple question name
+                    node.question.trigger = f"${{{current.question.name}}}"
+                    break
+                current = current.parent if hasattr(current, 'parent') else None
+
+
 def get_choice_filter(node: Node) -> str | None:
     """Get choice filter expression for node question based on CART data."""
     if not node.cart.left.not_present or not node.question.choices:
