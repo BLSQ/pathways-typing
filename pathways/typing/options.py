@@ -93,7 +93,7 @@ def add_segment_note(
     new_node = Node(name="segment_note")
     note = Question(name=new_node.uid, type="note", label=label)
     new_node.question = note
-    new_node.question.conditions = node.question.conditions
+    new_node.question.conditions = node.question.conditions.copy()
 
     node.insert_after(new_node)
 
@@ -169,6 +169,19 @@ def enforce_relevance(root: Node) -> Node:
         # parent question answer should not be null, except if it's a select_multiple question
         if node.parent.question.type != "select_multiple":
             node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
+        elif node.question.type == "note":
+            # For notes, even if direct parent is select_multiple, add the reference to help Enketo track dependencies
+            node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
+
+            # Also check for select_multiple ancestors (for notes that depend on calculates that depend on select_multiple)
+            current = node.parent
+            while current and not current.is_root:
+                if current.question.type == "select_multiple":
+                    cond = f"${{{current.question.name}}} != ''"
+                    if cond not in node.question.conditions:
+                        node.question.conditions.append(cond)
+                    break
+                current = current.parent if hasattr(current, 'parent') else None
 
         # all parent relevance rules
         for parent in node.parents:
