@@ -263,6 +263,8 @@ def exit_deadends(
     deadends_identified: list[str] = []
 
     for node in new_root.preorder():
+        if node.question and node.question.type and not node.question.type.startswith("select"):
+            continue
         if node.cart and node.cart.left and node.cart.left.not_present:
             deadend_choices = node.cart.left.not_present
             if deadend_choices:
