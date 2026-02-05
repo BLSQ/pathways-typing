@@ -181,7 +181,7 @@ def enforce_relevance(root: Node) -> Node:
                     if cond not in node.question.conditions:
                         node.question.conditions.append(cond)
                     break
-                current = current.parent if hasattr(current, 'parent') else None
+                current = current.parent if hasattr(current, "parent") else None
 
         # all parent relevance rules
         for parent in node.parents:
@@ -208,7 +208,7 @@ def add_triggers_for_select_multiple(root: Node) -> None:
                     # Set trigger to the select_multiple question name
                     node.question.trigger = f"${{{current.question.name}}}"
                     break
-                current = current.parent if hasattr(current, 'parent') else None
+                current = current.parent if hasattr(current, "parent") else None
 
 
 def get_choice_filter(node: Node) -> str | None:
@@ -298,7 +298,7 @@ def exit_deadends(
         if node.cart and node.cart.left and node.cart.left.not_present:
             deadend_choices = node.cart.left.not_present
             if deadend_choices:
-                var = node.name
+                var = node.question.name
                 if var not in deadends_identified:
                     print(f"Detected dead-end at question '{var}'")
                     deadends_identified.append(var)
