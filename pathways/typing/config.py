@@ -22,7 +22,7 @@ def read_excel_spreadsheet(fp: Path) -> pl.DataFrame:
     pl.DataFrame
         DataFrame with data from the Excel spreadsheet
     """
-    return pl.read_rexcel(
+    return pl.read_excel(
         fp, engine="calamine", read_options={"header_row": 1}, sheet_id=0, raise_if_empty=False
     )
 
