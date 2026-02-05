@@ -298,7 +298,9 @@ def exit_deadends(
         if node.cart and node.cart.left and node.cart.left.not_present:
             deadend_choices = node.cart.left.not_present
             if deadend_choices:
-                var = node.question.name
+                var = node.cart.var.replace(".", "_") if node.cart.var else node.name
+                if var not in choices_config:
+                    continue
                 if var not in deadends_identified:
                     print(f"Detected dead-end at question '{var}'")
                     deadends_identified.append(var)
