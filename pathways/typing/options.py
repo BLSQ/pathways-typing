@@ -275,7 +275,7 @@ def exit_deadends(
                 deadend_choices_xlsform = []
                 for cart_value in deadend_choices:
                     for choice in choices_config[var]:
-                        if choice["target_value"] == cart_value:
+                        if str(choice["target_value"]) == str(cart_value):
                             deadend_choices_xlsform.append(choice["name"])
                 assert len(deadend_choices_xlsform) == len(deadend_choices), (
                     "Some deadend choices were not found in choices_config"
