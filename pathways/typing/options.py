@@ -307,13 +307,25 @@ def exit_deadends(
 
                 # Get the list of choices leading to deadends
                 deadend_choices_xlsform = []
+                unmatched = []
                 for cart_value in deadend_choices:
+                    matched = False
                     for choice in choices_config[var]:
                         if str(choice["target_value"]) == str(cart_value):
                             deadend_choices_xlsform.append(choice["name"])
-                assert len(deadend_choices_xlsform) == len(deadend_choices), (
-                    "Some deadend choices were not found in choices_config"
-                )
+                            matched = True
+                    if not matched:
+                        unmatched.append(cart_value)
+
+                if unmatched:
+                    print(
+                        f"Warning: {len(unmatched)} deadend choice(s) for `{var}` "
+                        f"not found in choices_config: {unmatched}"
+                    )
+
+                if not deadend_choices_xlsform:
+                    continue
+
                 deadend_choices = deadend_choices_xlsform
 
                 # Get segment name from cluster number
