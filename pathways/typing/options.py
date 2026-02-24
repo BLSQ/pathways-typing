@@ -285,9 +285,14 @@ def mark_as_required(root: Node) -> Node:
 
 
 def exit_deadends(
-    root: Node, segments_config: dict, settings_config: dict, choices_config: dict
+    root: Node,
+    segments_config: dict,
+    settings_config: dict,
+    choices_config: dict,
+    low_confidence_threshold: float = 0.0,
 ) -> Node:
     """When the tree reaches a deadend, assign to most probable segment."""
+    low_confidence_threshold = low_confidence_threshold / 100
     new_root = copy.deepcopy(root)
 
     deadends_identified: list[str] = []
@@ -337,6 +342,7 @@ def exit_deadends(
 
                 # Create a new leaf node to assign the segment
                 new_node = Node(name="segment")
+                new_node.class_probabilities = node.cart.cluster_probabilities
                 new_node.question = Question(
                     name=new_node.uid, type="calculate", required=True, calculation=f"'{segment}'"
                 )
@@ -360,21 +366,27 @@ def exit_deadends(
                 label = {key: value.format(segment=segment) for key, value in note_label.items()}
 
                 # create note for low confidence
-                low_confidence_label = {
-                    key.replace("low_confidence_note", "label"): value.replace("\\n", "\n")
-                    if isinstance(value, str)
-                    else value
-                    for key, value in settings_config.items()
-                    if key.startswith("low_confidence_note")
-                }
+                use_low_conf = False
+                if low_confidence_threshold > 0 and node.cart.cluster_probabilities:
+                    max_prob = max(node.cart.cluster_probabilities.values())
+                    use_low_conf = max_prob < low_confidence_threshold
 
-                for key in label:
-                    if key in low_confidence_label:
-                        label[key] += low_confidence_label[key]
-                    else:
-                        label[key] += (
-                            "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
-                        )
+                if use_low_conf:
+                    low_confidence_label = {
+                        key.replace("low_confidence_note", "label"): value.replace("\\n", "\n")
+                        if isinstance(value, str)
+                        else value
+                        for key, value in settings_config.items()
+                        if key.startswith("low_confidence_note")
+                    }
+
+                    for key in label:
+                        if key in low_confidence_label:
+                            label[key] += low_confidence_label[key]
+                        else:
+                            label[key] += (
+                                "\n[Low segment assignment confidence]\nWe recommend stopping this survey and starting with a new respondent."
+                            )
 
                 note_node = Node(name="segment_note")
                 note = Question(name=note_node.uid, type="note", label=label)
