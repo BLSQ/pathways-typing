@@ -224,7 +224,7 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
         str: Mermaid diagram as a string.
     """
     header = "flowchart TD"
-    threshold = float(threshold) / 100.0
+    threshold_pct = float(threshold)
     shapes_lst = []
     links = []
     for node in root.preorder():
@@ -237,7 +237,7 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
         
         if is_segment_leaf and probabilities:
             max_prob = max(probabilities.values())
-            is_low_confidence = round(max_prob, 6) < round(threshold, 6)
+            is_low_confidence = round(max_prob * 100, 2) < round(threshold_pct, 2)
 
             shape_label = get_form_shape_label(node)
             if is_low_confidence:
@@ -273,7 +273,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
         str: Mermaid diagram as a string.
     """
     header = "flowchart TD"
-    threshold = float(threshold) / 100.0
+    threshold_pct = float(threshold)
     shapes_lst = []
     links = []
     cluster_to_node = build_cluster_to_node_mapping(root)
@@ -287,7 +287,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
         
         if is_segment_leaf and probabilities:
             max_prob = max(probabilities.values())
-            is_low_confidence = round(max_prob, 6) < round(threshold, 6)
+            is_low_confidence = round(max_prob * 100, 2) < round(threshold_pct, 2)
 
             prob_shapes, prob_links = create_segment_probability_stack(
                 node, probabilities, "circle", low_confidence=is_low_confidence, cluster_to_node=cluster_to_node
