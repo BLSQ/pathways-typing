@@ -190,7 +190,7 @@ def create_segment_probability_stack(
         segment_label = get_form_shape_label(cluster_to_node[top_seg], language)
     else:
         segment_label = top_seg
-    top_label = f"{prefix}{segment_label} ({top_prob * 100:.0f}%)"
+    top_label = f"{prefix}{segment_label} ({top_prob * 100:.1f}%)"
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
 
