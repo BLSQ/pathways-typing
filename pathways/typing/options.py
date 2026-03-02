@@ -13,13 +13,13 @@ def apply_calculate_option(
     new_question = create_split_question(new_node, questions_config, choices_config)
     new_node.question = new_question
     node.insert_before(new_node)
-    node.source_question = new_node.name
     node.question.type = "calculate"
+    node.source_question = new_node.name
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
     # node.question.trigger = update_xpath_variables(node, "${" + option_config["dst_question"] + "}")
     if default := option_config.get("default"):
         node.question.default = str(default)
-    new_node.question.conditions = node.question.conditions
+    new_node.question.conditions = node.question.conditions.copy()
     new_node.question.choices_from_parent = node.question.choices_from_parent
     node.question.choices_from_parent = None
     new_node.cart = node.cart
@@ -41,8 +41,8 @@ def apply_split_option(
 
     node.question.type = "calculate"
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
-    node_a.question.conditions = node.question.conditions
-    node_b.question.conditions = node.question.conditions
+    node_a.question.conditions = node.question.conditions.copy()
+    node_b.question.conditions = node.question.conditions.copy()
     node_a.question.choices_from_parent = node.question.choices_from_parent
     node_b.question.choices_from_parent = node.question.choices_from_parent
     node.question.choices_from_parent = None
@@ -60,7 +60,7 @@ def apply_hide_option(node: Node, option_config: dict) -> None:
 
     # remove from relevance conditions in children
     for child in node.preorder():
-        for condition in child.question.conditions:
+        for condition in child.question.conditions.copy():
             if node.name in condition:
                 child.question.conditions.remove(condition)
 

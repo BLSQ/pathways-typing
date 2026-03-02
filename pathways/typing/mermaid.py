@@ -303,6 +303,8 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
+        if node.question.type == "calculate":
+            continue
 
         is_segment_leaf = node.name == "segment"
         probabilities = node.class_probabilities
@@ -331,7 +333,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
             continue
 
         link_label = get_form_link_label(node)
-        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
+        link = draw_link(visible_parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
