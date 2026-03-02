@@ -38,6 +38,15 @@ FORM_SHAPE_TYPES = {
     "note": "parallelogram_alt",
 }
 
+def get_visible_parent(node: Node) -> Node | None:
+    """
+    Walk up the tree until we find a non-calculate parent.
+    """
+    parent = node.parent
+    while parent and parent.question.type == "calculate":
+        parent = parent.parent
+    return parent
+
 def clean_label(label: str) -> str:
     """Clean label string to not break whimsical import."""
     for char in ["(", ")", "[", "]"]:
@@ -131,24 +140,27 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
     return node.name
 
 def get_form_link_label(node: Node, language: str = "English (en)") -> str:
-    """Get label for form link between current node and its parent."""
+    # Case 1: Explicit choices already attached (unchanged behavior)
     if node.question.choices_from_parent:
-        choices = [
-            choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
-        ]
-        return ", ".join([str(choice) for choice in choices])
+        return ", ".join(
+            choice.label[f"label::{language}"]
+            for choice in node.question.choices_from_parent
+        )
 
-    if node.parent.question.type == "calculate" and node.cart_rule:
-        for parent in node.parents:
-            if parent.name == node.cart_rule.var.replace(".", "_").lower():
-                if not parent.question.choices:
-                    return ""
-                choices = filter_choices(parent.question.choices, node.cart_rule)
-                labels = [choice.label[f"label::{language}"] for choice in choices]
-                return ", ".join(labels)
+    # Case 2: Routing via calculated variable → pull labels from source question
+    if node.cart_rule and hasattr(node.parent, "source_question"):
+        source_name = node.parent.source_question
 
-    if node.parent.question.type == "calculate" and node.cart_rule:
-        return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
+        source = next(
+            (p for p in node.parents if p.name == source_name),
+            None,
+        )
+
+        if source and source.question.choices:
+            choices = filter_choices(source.question.choices, node.cart_rule)
+            return ", ".join(
+                choice.label[f"label::{language}"] for choice in choices
+            )
 
     return ""
 
@@ -230,6 +242,8 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
     for node in root.preorder():
         if skip_notes and node.question.type == "note":
             continue
+        if node.question.type == "calculate":
+            continue
 
         is_segment_leaf = node.name == "segment"
         probabilities = node.class_probabilities
@@ -253,8 +267,17 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
         if node.is_root:
             continue
 
+        visible_parent = get_visible_parent(node)
+        if not visible_parent or visible_parent.is_root:
+            continue
+
         link_label = get_form_link_label(node)
-        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
+        link = draw_link(
+            visible_parent.question.name,
+            node.question.name,
+            link_label,
+            dotted=is_low_confidence,
+        )
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
@@ -301,6 +324,10 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
             shapes_lst.append(shape)
 
         if node.is_root:
+            continue
+
+        visible_parent = get_visible_parent(node)
+        if not visible_parent or visible_parent.is_root:
             continue
 
         link_label = get_form_link_label(node)

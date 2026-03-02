@@ -13,6 +13,7 @@ def apply_calculate_option(
     new_question = create_split_question(new_node, questions_config, choices_config)
     new_node.question = new_question
     node.insert_before(new_node)
+    node.source_question = new_node.name
     node.question.type = "calculate"
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
     # node.question.trigger = update_xpath_variables(node, "${" + option_config["dst_question"] + "}")
