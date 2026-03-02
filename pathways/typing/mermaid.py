@@ -139,18 +139,6 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
         return label
     return node.name
 
-def _effective_parent(node: Node) -> Node | None:
-    parent = node.parent
-    while (
-        parent
-        and parent.question.type == "calculate"
-        and parent.parent
-        and parent.parent.question.choices_from_parent
-    ):
-        parent = parent.parent
-    return parent
-
-
 def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     # Case 1: Explicit choices already attached (unchanged behavior)
     if node.question.choices_from_parent:
