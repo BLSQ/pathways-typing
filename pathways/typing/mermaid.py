@@ -47,15 +47,6 @@ def get_visible_parent(node: Node) -> Node | None:
         parent = parent.parent
     return parent
 
-def get_visible_parent(node: Node) -> Node | None:
-    """
-    Walk up the tree until we find a non-calculate parent.
-    """
-    parent = node.parent
-    while parent and parent.question.type == "calculate":
-        parent = parent.parent
-    return parent
-
 def clean_label(label: str) -> str:
     """Clean label string to not break whimsical import."""
     for char in ["(", ")", "[", "]"]:
@@ -264,10 +255,6 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
         if skip_notes and node.question.type == "note":
             continue
         if node.question.type == "calculate":
-            continue
-
-        # suppress calculate nodes that were only inserted to remap a choice list
-        if node.question.type == "calculate" and node.parent and node.parent.question.choices_from_parent:
             continue
 
         is_segment_leaf = node.name == "segment"
