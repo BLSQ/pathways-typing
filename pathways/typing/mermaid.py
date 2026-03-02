@@ -47,6 +47,15 @@ def get_visible_parent(node: Node) -> Node | None:
         parent = parent.parent
     return parent
 
+def get_visible_parent(node: Node) -> Node | None:
+    """
+    Walk up the tree until we find a non-calculate parent.
+    """
+    parent = node.parent
+    while parent and parent.question.type == "calculate":
+        parent = parent.parent
+    return parent
+
 def clean_label(label: str) -> str:
     """Clean label string to not break whimsical import."""
     for char in ["(", ")", "[", "]"]:
