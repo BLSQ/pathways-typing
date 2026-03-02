@@ -19,7 +19,7 @@ def apply_calculate_option(
     # node.question.trigger = update_xpath_variables(node, "${" + option_config["dst_question"] + "}")
     if default := option_config.get("default"):
         node.question.default = str(default)
-    new_node.question.conditions = node.question.conditions.copy()
+    new_node.question.conditions = node.question.conditions
     new_node.question.choices_from_parent = node.question.choices_from_parent.copy()
     node.question.choices_from_parent = None
     new_node.cart = node.cart
@@ -41,10 +41,10 @@ def apply_split_option(
 
     node.question.type = "calculate"
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
-    node_a.question.conditions = node.question.conditions.copy()
-    node_b.question.conditions = node.question.conditions.copy()
-    node_a.question.choices_from_parent = node.question.choices_from_parent.copy()
-    node_b.question.choices_from_parent = node.question.choices_from_parent.copy()
+    node_a.question.conditions = node.question.conditions
+    node_b.question.conditions = node.question.conditions
+    node_a.question.choices_from_parent = node.question.choices_from_parent
+    node_b.question.choices_from_parent = node.question.choices_from_parent
     node.question.choices_from_parent = None
     node_a.cart = node.cart
     node_b.cart = node.cart
