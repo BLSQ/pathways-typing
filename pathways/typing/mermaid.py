@@ -11,6 +11,7 @@ Notes
 """
 
 from typing import Literal
+import math
 
 from .exceptions import MermaidError
 from .tree import Node, filter_choices
@@ -190,7 +191,9 @@ def create_segment_probability_stack(
         segment_label = get_form_shape_label(cluster_to_node[top_seg], language)
     else:
         segment_label = top_seg
-    top_label = f"{prefix}{segment_label} ({top_prob * 100:.2f}%)"
+    top_percentage = top_prob * 100
+    top_truncated = math.floor(top_percentage * 10) / 10.0
+    top_label = f"{prefix}{segment_label} ({top_truncated:.1f}%)"
     top_shape = draw_shape(prev_id, top_label, shape_type)
     shapes.append(top_shape)
 
@@ -201,7 +204,9 @@ def create_segment_probability_stack(
             segment_label = get_form_shape_label(cluster_to_node[seg], language)
         else:
             segment_label = seg
-        new_label = f"{prefix}{segment_label} ({prob * 100:.2f}%)"
+        new_percentage = prob * 100
+        new_truncated = math.floor(new_percentage * 10) / 10.0
+        new_label = f"{prefix}{segment_label} ({new_truncated:.1f}%)"
         new_shape = draw_shape(new_id, new_label, shape_type)
         shapes.append(new_shape)
 
