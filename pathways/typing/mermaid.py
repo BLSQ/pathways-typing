@@ -10,6 +10,7 @@ Notes
       feature.
 """
 
+from platform import node
 from typing import Literal
 import math
 
@@ -133,43 +134,46 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
 
 def get_form_link_label(node: Node, choices_config: dict, language: str = "English (en)") -> str:
     """Get label for form link between current node and its parent."""
-    # Case 1: explicit choices
+    # Normal Case
     if node.question.choices_from_parent:
-        labels = [
-            choice.label[f"label::{language}"]
-            for choice in node.question.choices_from_parent
+        choices = [
+            choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
         ]
-        return ", ".join(labels)
-    # Case 2: no rule
-    if not node.cart_rule:
-        return ""
-    normalized_var = node.cart_rule.var.replace(".", "_").lower()
-    # Case 3: config lookup
-    if normalized_var in choices_config:
-        try:
-            choices = [
-                Choice(
-                    list_name=choice["choice_list"],
-                    name=choice["name"],
-                    label={k: v for k, v in choice.items() if k.startswith("label")},
-                    cart_value=choice.get("target_value"),
-                )
-                for choice in choices_config[normalized_var]
-            ]
-            filtered = filter_choices(choices, node.cart_rule)
-            if filtered:
-                labels = [
-                    choice.label[f"label::{language}"]
-                    for choice in filtered
-                ]
+        return ", ".join([str(choice) for choice in choices])
+    
+    # Calculate Nodes
+    if node.parent.question.type == "calculate" and node.cart_rule:
+        normalized_var = node.cart_rule.var.replace(".", "_").lower()
+        for parent in node.parents:
+            if parent.name == normalized_var:
+                # if no choices on node, try Excel config
+                if not parent.question.choices:
+                    if normalized_var in choices_config:
+                        choices = [
+                            Choice(
+                                list_name=choice["choice_list"],
+                                name=choice["name"],
+                                label={k: v for k, v in choice.items() if k.startswith("label")},
+                                cart_value=choice.get("target_value"),
+                            )
+                            for choice in choices_config[normalized_var]
+                        ]
+                        filtered = filter_choices(choices, node.cart_rule)
+                        if filtered:
+                            labels = [
+                                choice.label[f"label::{language}"]
+                                for choice in filtered
+                            ]
+                            return ", ".join(labels)
+                    return ""
+                choices = filter_choices(parent.question.choices, node.cart_rule)
+                labels = [choice.label[f"label::{language}"] for choice in choices]
                 return ", ".join(labels)
-        except (TypeError, ValueError, AttributeError):
-            pass
-    # Case 4: in operator
-    if node.cart_rule.operator == "in":
-        return ", ".join(node.cart_rule.value)
-    # Case 5: fallback rule
-    return f"{node.cart_rule.operator} {node.cart_rule.value}"
+    
+    if node.parent.question.type == "calculate" and node.cart_rule:
+        return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
+
+    return ""
 
 def create_segment_probability_stack(
     node: Node,
