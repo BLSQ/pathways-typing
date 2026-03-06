@@ -174,7 +174,7 @@ def get_form_link_label(node: Node, choices_config: dict, language: str = "Engli
                     return ", ".join(labels)
     # Fallback
     if node.parent.question.type == "calculate" and node.cart_rule:
-        return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
+        return f"{node.cart_rule.operator} {node.cart_rule.value}"
 
     return ""
 
