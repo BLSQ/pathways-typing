@@ -14,7 +14,7 @@ from typing import Literal
 import math
 
 from .exceptions import MermaidError
-from .tree import Node, filter_choices
+from .tree import Node, filter_choices, Choice
 
 ShapeType = Literal[
     "rectangle",
@@ -131,34 +131,64 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
         return label
     return node.name
 
-def get_form_link_label(node: Node, language: str = "English (en)") -> str:
+def get_form_link_label(node: Node, choices_config: dict, language: str = "English (en)") -> str:
     """Get label for form link between current node and its parent."""
-    # Case 1: Normal Question Nodes
+    # Case 1: explicit choices
     if node.question.choices_from_parent:
-        choices = [
-            choice.label[f"label::{language}"] 
+        labels = [
+            choice.label[f"label::{language}"]
             for choice in node.question.choices_from_parent
         ]
-        return ", ".join([str(choice) for choice in choices])
-    # Case 2: Calculate Nodes
-    if node.parent.question.type == "calculate" and node.cart_rule:
-        normalized_var = node.cart_rule.var.replace(".", "_").lower()
-        for parent in node.parents:
-            if not parent.question:
-                continue
-            parent_var = parent.name.rsplit("_", 1)[0].replace(".", "_").lower()
-            if parent_var == normalized_var:
-                if not parent.question.choices:
-                    return ""
+        return ", ".join(labels)
+    # Case 2: no rule
+    if not node.cart_rule:
+        return ""
+    normalized_var = node.cart_rule.var.replace(".", "_").lower()
+    # Case 3: ancestor search
+    for parent in node.parents:
+        if not parent.question:
+            continue
+        parent_var = parent.name.replace(".", "_").lower()
+        # skip categorical variants
+        if parent_var.endswith("_cat"):
+            continue
+        if parent_var == normalized_var and parent.question.choices:
+            try:
                 choices = filter_choices(parent.question.choices, node.cart_rule)
+                if choices:
+                    labels = [
+                        choice.label[f"label::{language}"]
+                        for choice in choices
+                    ]
+                    return ", ".join(labels)
+            except (TypeError, ValueError, AttributeError):
+                continue
+    # Case 4: config lookup
+    if normalized_var in choices_config:
+        try:
+            choices = [
+                Choice(
+                    list_name=choice["choice_list"],
+                    name=choice["name"],
+                    label={k: v for k, v in choice.items() if k.startswith("label")},
+                    cart_value=choice.get("target_value"),
+                )
+                for choice in choices_config[normalized_var]
+            ]
+            filtered = filter_choices(choices, node.cart_rule)
+            if filtered:
                 labels = [
-                    choice.label[f"label::{language}"] 
-                    for choice in choices
+                    choice.label[f"label::{language}"]
+                    for choice in filtered
                 ]
                 return ", ".join(labels)
-        # Fallback 
-        return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
-    return ""
+        except (TypeError, ValueError, AttributeError):
+            pass
+    # Case 5: in operator
+    if node.cart_rule.operator == "in":
+        return ", ".join(node.cart_rule.value)
+    # Case 6: fallback rule
+    return f"{node.cart_rule.operator} {node.cart_rule.value}"
 
 def create_segment_probability_stack(
     node: Node,
@@ -223,12 +253,13 @@ def create_segment_probability_stack(
 
     return shapes, links
 
-def create_default_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
+def create_default_form_diagram(root: Node, choices_config: dict, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
     """
     Create a simple mermaid diagram for a typing form tree.
 
     Args:
         root (Node): The root node of the form tree.
+        choices_config (dict): Choices configuration from Excel.
         skip_notes (bool): If True, skip nodes of type "note" (default: False).
         threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
 
@@ -265,19 +296,20 @@ def create_default_form_diagram(root: Node, *, skip_notes: bool = False, thresho
         if node.is_root:
             continue
 
-        link_label = get_form_link_label(node)
+        link_label = get_form_link_label(node, choices_config)
         link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
 
 
-def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
+def create_detailed_form_diagram(root: Node, choices_config: dict, *, skip_notes: bool = False, threshold: float = 0.0) -> str:
     """
     Create a detailed mermaid diagram with stacked probabilities for a typing form tree.
 
     Args:
         root (Node): The root node of the form tree.
+        choices_config (dict): Choices configuration from Excel.
         skip_notes (bool): If True, skip nodes of type "note" (default: False).
         threshold (float): Probability threshold for low confidence (default: 0.0, as percent).
 
@@ -315,7 +347,7 @@ def create_detailed_form_diagram(root: Node, *, skip_notes: bool = False, thresh
         if node.is_root:
             continue
 
-        link_label = get_form_link_label(node)
+        link_label = get_form_link_label(node, choices_config)
         link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
