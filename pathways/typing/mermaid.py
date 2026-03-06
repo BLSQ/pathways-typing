@@ -165,11 +165,10 @@ def get_form_link_label(node: Node, choices_config: dict, language: str = "Engli
                                 for choice in filtered
                             ]
                             return ", ".join(labels)
-                    return ""
                 choices = filter_choices(parent.question.choices, node.cart_rule)
                 labels = [choice.label[f"label::{language}"] for choice in choices]
                 return ", ".join(labels)
-    
+    # Falback
     if node.parent.question.type == "calculate" and node.cart_rule:
         return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
 
