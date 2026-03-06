@@ -134,21 +134,23 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
 
 def get_form_link_label(node: Node, choices_config: dict, language: str = "English (en)") -> str:
     """Get label for form link between current node and its parent."""
-    # Normal Case
+    # Normal Nodes
     if node.question.choices_from_parent:
         choices = [
             choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
         ]
         return ", ".join([str(choice) for choice in choices])
-    
+
     # Calculate Nodes
     if node.parent.question.type == "calculate" and node.cart_rule:
         normalized_var = node.cart_rule.var.replace(".", "_").lower()
         for parent in node.parents:
+            if not parent.question:
+                continue
             if parent.name == normalized_var:
-                # if no choices on node, try Excel config
+                # Try Excel config if node has no choices
                 if not parent.question.choices:
-                    if normalized_var in choices_config:
+                    if normalized_var in choices_config and choices_config[normalized_var]:
                         choices = [
                             Choice(
                                 list_name=choice["choice_list"],
@@ -158,17 +160,19 @@ def get_form_link_label(node: Node, choices_config: dict, language: str = "Engli
                             )
                             for choice in choices_config[normalized_var]
                         ]
-                        filtered = filter_choices(choices, node.cart_rule)
+                        filtered = filter_choices(choices, node.cart_rule) 
                         if filtered:
                             labels = [
                                 choice.label[f"label::{language}"]
-                                for choice in filtered
-                            ]
+                                for choice in filtered]
                             return ", ".join(labels)
-                choices = filter_choices(parent.question.choices, node.cart_rule)
-                labels = [choice.label[f"label::{language}"] for choice in choices]
-                return ", ".join(labels)
-    # Falback
+                else:
+                    choices = filter_choices(parent.question.choices, node.cart_rule) 
+                    labels = [
+                        choice.label[f"label::{language}"]
+                        for choice in choices]
+                    return ", ".join(labels)
+    # Fallback
     if node.parent.question.type == "calculate" and node.cart_rule:
         return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
 
