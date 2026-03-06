@@ -144,26 +144,7 @@ def get_form_link_label(node: Node, choices_config: dict, language: str = "Engli
     if not node.cart_rule:
         return ""
     normalized_var = node.cart_rule.var.replace(".", "_").lower()
-    # Case 3: ancestor search
-    for parent in node.parents:
-        if not parent.question:
-            continue
-        parent_var = parent.name.replace(".", "_").lower()
-        # skip categorical variants
-        if parent_var.endswith("_cat"):
-            continue
-        if parent_var == normalized_var and parent.question.choices:
-            try:
-                choices = filter_choices(parent.question.choices, node.cart_rule)
-                if choices:
-                    labels = [
-                        choice.label[f"label::{language}"]
-                        for choice in choices
-                    ]
-                    return ", ".join(labels)
-            except (TypeError, ValueError, AttributeError):
-                continue
-    # Case 4: config lookup
+    # Case 3: config lookup
     if normalized_var in choices_config:
         try:
             choices = [
@@ -184,10 +165,10 @@ def get_form_link_label(node: Node, choices_config: dict, language: str = "Engli
                 return ", ".join(labels)
         except (TypeError, ValueError, AttributeError):
             pass
-    # Case 5: in operator
+    # Case 4: in operator
     if node.cart_rule.operator == "in":
         return ", ".join(node.cart_rule.value)
-    # Case 6: fallback rule
+    # Case 5: fallback rule
     return f"{node.cart_rule.operator} {node.cart_rule.value}"
 
 def create_segment_probability_stack(
