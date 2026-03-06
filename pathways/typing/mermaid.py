@@ -133,24 +133,31 @@ def get_form_shape_label(node: Node, language: str = "English (en)") -> str:
 
 def get_form_link_label(node: Node, language: str = "English (en)") -> str:
     """Get label for form link between current node and its parent."""
+    # Case 1: Normal Question Nodes
     if node.question.choices_from_parent:
         choices = [
-            choice.label[f"label::{language}"] for choice in node.question.choices_from_parent
+            choice.label[f"label::{language}"] 
+            for choice in node.question.choices_from_parent
         ]
         return ", ".join([str(choice) for choice in choices])
-
+    # Case 2: Calculate Nodes
     if node.parent.question.type == "calculate" and node.cart_rule:
+        normalized_var = node.cart_rule.var.replace(".", "_").lower()
         for parent in node.parents:
-            if parent.name == node.cart_rule.var.replace(".", "_").lower():
+            if not parent.question:
+                continue
+            parent_var = parent.name.rsplit("_", 1)[0].replace(".", "_").lower()
+            if parent_var == normalized_var:
                 if not parent.question.choices:
                     return ""
                 choices = filter_choices(parent.question.choices, node.cart_rule)
-                labels = [choice.label[f"label::{language}"] for choice in choices]
+                labels = [
+                    choice.label[f"label::{language}"] 
+                    for choice in choices
+                ]
                 return ", ".join(labels)
-
-    if node.parent.question.type == "calculate" and node.cart_rule:
+        # Fallback 
         return f"'{node.cart_rule.operator} {node.cart_rule.value}'"
-
     return ""
 
 def create_segment_probability_stack(
