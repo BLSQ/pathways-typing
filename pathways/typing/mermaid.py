@@ -284,7 +284,7 @@ def create_default_form_diagram(root: Node, choices_config: dict, *, skip_notes:
             continue
 
         link_label = get_form_link_label(node, choices_config)
-        link = draw_link(node.parent.uid, node.uid, link_label, dotted=is_low_confidence)
+        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
@@ -335,7 +335,7 @@ def create_detailed_form_diagram(root: Node, choices_config: dict, *, skip_notes
             continue
 
         link_label = get_form_link_label(node, choices_config)
-        link = draw_link(node.parent.uid, node.uid, link_label, dotted=is_low_confidence)
+        link = draw_link(node.parent.question.name, node.question.name, link_label, dotted=is_low_confidence)
         links.append(link)
 
     return "\n\t".join([header, *shapes_lst, *links])
