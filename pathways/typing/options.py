@@ -417,10 +417,8 @@ def filter_unreachable_deadends(node: Node, deadend_choices: list[str]) -> list[
         if ancestor.cart_rule.var != var:
             continue
         if ancestor.cart_rule.operator == "in":
-            if not isinstance(ancestor.cart_rule.value, str):
-                raise TypeError(
-                    f"CART value expected to be string, got {type(ancestor.cart_rule.value)}"
-                )
+            if not isinstance(ancestor.cart_rule.value, list):
+                raise ValueError(f"Expected list, got {ancestor.cart_rule.value}")
             reachable = [v for v in reachable if v in ancestor.cart_rule.value]
 
     return reachable
