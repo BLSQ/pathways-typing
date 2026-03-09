@@ -303,6 +303,7 @@ def exit_deadends(
         if node.cart and node.cart.left and node.cart.left.not_present:
             deadend_choices = node.cart.left.not_present
             if deadend_choices:
+                deadend_choices = filter_unreachable_deadends(node, deadend_choices)
                 var = node.cart.var.replace(".", "_") if node.cart.var else node.name
                 if var not in choices_config:
                     continue
@@ -395,3 +396,31 @@ def exit_deadends(
                 new_node.add_child(note_node)
 
     return new_root
+
+
+def filter_unreachable_deadends(node: Node, deadend_choices: list[str]) -> list[str]:
+    """Remove dead-end choices that are unreachable due to ancestor splits on the same variale."""
+    if node.cart:
+        var = node.cart.var
+    else:
+        raise ValueError(f"Node {node.name} without CART info")
+
+    # Root node
+    if not node.parents:
+        return deadend_choices
+
+    reachable = list(deadend_choices)
+
+    for ancestor in node.parents:
+        if not ancestor.cart_rule:
+            continue
+        if ancestor.cart_rule.var != var:
+            continue
+        if ancestor.cart_rule.operator == "in":
+            if not isinstance(ancestor.cart_rule.value, str):
+                raise TypeError(
+                    f"CART value expected to be string, got {type(ancestor.cart_rule.value)}"
+                )
+            reachable = [v for v in reachable if v in ancestor.cart_rule.value]
+
+    return reachable
