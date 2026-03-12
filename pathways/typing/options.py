@@ -350,6 +350,15 @@ def exit_deadends(
                 node.add_child(new_node)
                 new_node.question.conditions = node.question.conditions.copy()
 
+                # Set choices_from_parent for mermaid diagram display
+                if node.question.choices:
+                    deadend_choice_objects = [
+                        choice for choice in node.question.choices
+                        if choice.name in deadend_choices
+                    ]
+                    if deadend_choice_objects:
+                        new_node.question.choices_from_parent = deadend_choice_objects
+
                 if len(deadend_choices) > 1:
                     conditions = [xpath_condition(var, "=", v) for v in deadend_choices]
                     expression = " or ".join(conditions)
