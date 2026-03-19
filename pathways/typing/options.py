@@ -16,7 +16,8 @@ def apply_calculate_option(
     node.question.type = "calculate"
     node.question.calculation = update_xpath_variables(node, option_config["calculation"])
     # node.question.trigger = update_xpath_variables(node, "${" + option_config["dst_question"] + "}")
-    if default := option_config.get("default") is not None:
+    default = option_config.get("default")
+    if default is not None:
         node.question.default = str(default)
     new_node.question.conditions = node.question.conditions
     new_node.question.choices_from_parent = node.question.choices_from_parent
