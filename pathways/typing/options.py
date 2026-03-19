@@ -159,29 +159,15 @@ def enforce_relevance(root: Node) -> Node:
     # use relevance rule from parent by default
     for node in new_root.preorder():
         if not node.is_root and not node.question.conditions:
-            node.question.conditions = node.parent.question.conditions
+            node.question.conditions = node.parent.question.conditions.copy()
 
     # join relevance rules from all parent nodes
     for node in new_root.preorder():
         if node.is_root:
             continue
 
-        # parent question answer should not be null, except if it's a select_multiple question
-        if node.parent.question.type != "select_multiple":
+        if node.parent.question.type not in ("select_multiple", "calculate"):
             node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
-        elif node.question.type == "note":
-            # For notes, even if direct parent is select_multiple, add the reference to help Enketo track dependencies
-            node.question.conditions.append(f"${{{node.parent.question.name}}} != ''")
-
-            # Also check for select_multiple ancestors (for notes that depend on calculates that depend on select_multiple)
-            current = node.parent
-            while current and not current.is_root:
-                if current.question.type == "select_multiple":
-                    cond = f"${{{current.question.name}}} != ''"
-                    if cond not in node.question.conditions:
-                        node.question.conditions.append(cond)
-                    break
-                current = current.parent if hasattr(current, "parent") else None
 
         # all parent relevance rules
         for parent in node.parents:
@@ -353,8 +339,7 @@ def exit_deadends(
                 # Set choices_from_parent for mermaid diagram display
                 if node.question.choices:
                     deadend_choice_objects = [
-                        choice for choice in node.question.choices
-                        if choice.name in deadend_choices
+                        choice for choice in node.question.choices if choice.name in deadend_choices
                     ]
                     if deadend_choice_objects:
                         new_node.question.choices_from_parent = deadend_choice_objects
