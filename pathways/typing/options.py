@@ -253,9 +253,19 @@ def skip_duplicate_questions(root: Node) -> Node:
                 continue
 
             if node.name == parent.name and not node.name.startswith("segment"):
+                old_ref = f"${{{node.question.name}}}"
+                new_ref = f"${{{parent.question.name}}}"
                 node.question.type = "calculate"
                 node.question.choice_list = None
-                node.question.calculation = f"${{{parent.question.name}}}"
+                node.question.calculation = new_ref
+
+                # Replace references to the deduplicated UID with the original
+                # ancestor UID in all descendant conditions
+                if old_ref != new_ref:
+                    for descendant in node.preorder():
+                        descendant.question.conditions = [
+                            c.replace(old_ref, new_ref) for c in descendant.question.conditions
+                        ]
 
     return new_root
 
