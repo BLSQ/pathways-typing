@@ -450,8 +450,8 @@ def skip_location_from_screening(root: Node, screening_location_name: str) -> No
 
     new_root.question.type = "calculate"
     new_root.question.calculation = f"${{{screening_location_name}}}"
-    new_root.question.label = None
-    new_root.question.hint = None
+    new_root.question.label = {}
+    new_root.question.hint = {}
     new_root.question.choices = None
     new_root.question.choice_list = None
     new_root.question.choice_filter = None
