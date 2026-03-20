@@ -427,3 +427,34 @@ def filter_unreachable_deadends(node: Node, deadend_choices: list[str]) -> list[
             reachable = [v for v in reachable if v in ancestor.cart_rule.value]
 
     return reachable
+
+
+def skip_location_from_screening(root: Node, screening_location_name: str) -> Node:
+    """Skip the CART location question when location is already in screening.
+
+    Convert the root location node from a select_one to a calculate that
+    references the screening question's answer. This avoids asking the user
+    about location twice.
+
+    Args:
+        root: The root node of the form tree.
+        screening_location_name: The name of the screening question that captures location.
+
+    Return:
+        New root node with the location question modified to reference the screening question.
+    """
+    new_root = copy.deepcopy(root)
+
+    if new_root.name != "location":
+        return new_root
+
+    new_root.question.type = "calculate"
+    new_root.question.calculation = f"${{{screening_location_name}}}"
+    new_root.question.label = None
+    new_root.question.hint = None
+    new_root.question.choices = None
+    new_root.question.choice_list = None
+    new_root.question.choice_filter = None
+    new_root.question.required = False
+
+    return new_root
