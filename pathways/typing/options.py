@@ -188,14 +188,9 @@ def add_triggers_for_select_multiple(root: Node) -> None:
     """
     for node in root.preorder():
         if node.question.type == "calculate":
-            # Walk up the tree to find if there's a select_multiple ancestor
-            current = node.parent
-            while current and not current.is_root:
-                if current.question.type == "select_multiple":
-                    # Set trigger to the select_multiple question name
-                    node.question.trigger = f"${{{current.question.name}}}"
-                    break
-                current = current.parent if hasattr(current, "parent") else None
+            parent = node.parent
+            if parent and not parent.is_root and parent.question.type == "select_multiple":
+                node.question.trigger = f"${{{parent.question.name}}}"
 
 
 def get_choice_filter(node: Node) -> str | None:
